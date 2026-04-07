@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - TrackBox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: { fontFamily: { sans: ['Inter', 'sans-serif'], }, colors: { evsuRed: '#800000', evsuRedDark: '#5c0000', evsuGold: '#FFD700', evsuGoldDark: '#e6c200', } }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen text-gray-800">
+    <!-- Navbar -->
+    <header class="bg-evsuRed text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="/dashboard" class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 bg-white rounded-lg border-b-[3px] border-gray-200 shadow-sm">
+                        <svg class="w-[22px] h-[22px] text-evsuRed" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    </div>
+                    <span class="font-extrabold text-2xl tracking-tight text-white drop-shadow-sm">Track<span class="text-evsuGold">Box</span></span>
+                </a>
+                <div class="flex items-center space-x-6">
+                    <span class="text-sm text-gray-200">Hello, {{ user.first_name }} {{ user.last_name }}!</span>
+                    <a href="/logout" class="text-white hover:text-evsuGold transition duration-200 font-medium text-sm">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        <div class="bg-white shadow rounded-lg p-6 border-t-4 border-t-evsuRed">
+            <h1 class="text-2xl font-bold text-gray-900 border-b pb-4 mb-4">User Dashboard</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- User Profile Summary -->
+                <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Profile Information</h3>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li><span class="font-medium text-gray-900">Name:</span> {{ user.first_name }} {% if user.middle_name %}{{ user.middle_name }} {% endif %}{{ user.last_name }}</li>
+                        <li><span class="font-medium text-gray-900">ID:</span> {{ user.university_id }}</li>
+                        <li><span class="font-medium text-gray-900">Email:</span> {{ user.email }}</li>
+                        <li>
+                            <span class="font-medium text-gray-900">Role:</span> 
+                            <span class="px-2 py-1 bg-evsuRed/10 text-evsuRed text-xs font-semibold rounded-full ml-1">{{ user.role }}</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Quick Actions Overview -->
+                <div class="bg-gray-50 p-5 rounded-lg border border-gray-200 flex flex-col justify-center items-center text-center">
+                    <div class="mb-4 text-evsuGoldDark">
+                        <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">The reporting and claiming functionality is coming soon.</p>
+                    <button class="bg-evsuRed text-white px-4 py-2 rounded shadow opacity-50 cursor-not-allowed">Report Lost Item</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
