@@ -10,14 +10,18 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
 from sqlalchemy.orm import Session
+import os
+from dotenv import load_dotenv
 
 from database import engine, Base, get_db, SessionLocal
 from models import User as DBUser
 
+load_dotenv()
+
 app = FastAPI(title="TrackBox: Lost and Found Management System")
 
 # Security settings
-SECRET_KEY = "my_super_secret_evsu_key"  # In production, use env variable
+SECRET_KEY = os.getenv("SECRET_KEY", "my_super_secret_evsu_key")  # Loaded from .env
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -53,8 +57,8 @@ def startup_event():
 oauth = OAuth()
 oauth.register(
     name='google',
-    client_id='701122749258-u0kakqokhsfft8ol1gkmnesihcg1rku4.apps.googleusercontent.com',
-    client_secret='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',
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={'scope': 'openid email profile'}
 )
