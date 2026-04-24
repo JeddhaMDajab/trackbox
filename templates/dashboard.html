@@ -3,66 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - TrackBox</title>
+    <title>Dashboard | TrackBox</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
-                extend: { fontFamily: { sans: ['Inter', 'sans-serif'], }, colors: { evsuRed: '#800000', evsuRedDark: '#5c0000', evsuGold: '#FFD700', evsuGoldDark: '#e6c200', } }
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: {
+                        evsuRed: '#800000',
+                        evsuRedDark: '#5c0000',
+                        evsuGold: '#FFD700',
+                        evsuGoldDark: '#e6c200',
+                    }
+                }
             }
         }
     </script>
+    <style>
+        .view-section { display: none; transition: all 0.3s ease; }
+        .view-section.active { display: block; }
+        .nav-item.active {
+            background-color: rgba(255, 215, 0, 0.1);
+            color: #FFD700;
+            border-left: 4px solid #FFD700;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        #camera-preview video { width: 100%; border-radius: 1.5rem; transform: scaleX(-1); }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
 </head>
-<body class="bg-gray-100 flex flex-col min-h-screen text-gray-800">
-    <!-- Navbar -->
-    <header class="bg-evsuRed text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-20">
-                <a href="/dashboard" class="flex items-center gap-3">
-                    <div class="flex items-center justify-center w-10 h-10 bg-white rounded-lg border-b-[3px] border-gray-200 shadow-sm">
-                        <svg class="w-[22px] h-[22px] text-evsuRed" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                    </div>
-                    <span class="font-extrabold text-2xl tracking-tight text-white drop-shadow-sm">Track<span class="text-evsuGold">Box</span></span>
-                </a>
-                <div class="flex items-center space-x-6">
-                    <span class="text-sm text-gray-200">Hello, {{ user.first_name }} {{ user.last_name }}!</span>
-                    <a href="/logout" class="text-white hover:text-evsuGold transition duration-200 font-medium text-sm">Logout</a>
-                </div>
-            </div>
-        </div>
-    </header>
+<body class="bg-[#F8F9FA] text-gray-800 antialiased flex h-screen overflow-hidden">
 
-    <!-- Dashboard Content -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
-        <div class="bg-white shadow rounded-lg p-6 border-t-4 border-t-evsuRed">
-            <h1 class="text-2xl font-bold text-gray-900 border-b pb-4 mb-4">User Dashboard</h1>
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-evsuRed text-white w-72 flex-shrink-0 flex flex-col z-40 shadow-2xl transition-all duration-300">
+        <div class="p-8 pb-10 flex items-center gap-3">
+            <div class="w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-evsuRed" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+            </div>
+            <span class="font-bold text-2xl tracking-tighter text-white">Track<span class="text-evsuGold">Box</span></span>
+        </div>
+
+        <nav id="nav-container" class="flex-grow flex flex-col px-4 space-y-1">
+            {% if user.role in ['Security', 'Admin', 'Security Guard', 'SAO Admin', 'IT Faculty'] %}
+                <!-- Admin Navigation -->
+                <button onclick="switchView('admin-home', this)" class="nav-item active flex items-center gap-4 px-5 py-3.5 rounded-xl font-bold transition-all w-full text-left">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    Admin Overview
+                </button>
+                <button onclick="switchView('admin-queue', this)" class="nav-item flex items-center gap-4 px-5 py-3.5 rounded-xl text-white/70 font-medium transition-all w-full text-left hover:bg-white/5 group">
+                    <svg class="w-5 h-5 group-hover:text-evsuGold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    Pending Verifications
+                </button>
+                <button onclick="switchView('admin-inventory', this)" class="nav-item flex items-center gap-4 px-5 py-3.5 rounded-xl text-white/70 font-medium transition-all w-full text-left hover:bg-white/5 group">
+                    <svg class="w-5 h-5 group-hover:text-evsuGold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    Inventory Assets
+                </button>
+                <button onclick="switchView('admin-users', this)" class="nav-item flex items-center gap-4 px-5 py-3.5 rounded-xl text-white/70 font-medium transition-all w-full text-left hover:bg-white/5 group">
+                    <svg class="w-5 h-5 group-hover:text-evsuGold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    User Management
+                </button>
+            {% else %}
+                <!-- Student Navigation -->
+                <button onclick="switchView('home', this)" class="nav-item active flex items-center gap-4 px-5 py-3.5 rounded-xl font-bold transition-all w-full text-left">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    My Home
+                </button>
+                <button onclick="switchView('report', this)" class="nav-item flex items-center gap-4 px-5 py-3.5 rounded-xl text-white/70 font-medium transition-all w-full text-left hover:bg-white/5 group">
+                    <svg class="w-5 h-5 group-hover:text-evsuGold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0h-3m-9-4.725V17a2 2 0 002 2h6.5l3 3 3-3H19a2 2 0 002-2V6.275a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    Report Loss
+                </button>
+            {% endif %}
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- User Profile Summary -->
-                <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Profile Information</h3>
-                    <ul class="space-y-2 text-sm text-gray-600">
-                        <li><span class="font-medium text-gray-900">Name:</span> {{ user.first_name }} {% if user.middle_name %}{{ user.middle_name }} {% endif %}{{ user.last_name }}</li>
-                        <li><span class="font-medium text-gray-900">ID:</span> {{ user.university_id }}</li>
-                        <li><span class="font-medium text-gray-900">Email:</span> {{ user.email }}</li>
-                        <li>
-                            <span class="font-medium text-gray-900">Role:</span> 
-                            <span class="px-2 py-1 bg-evsuRed/10 text-evsuRed text-xs font-semibold rounded-full ml-1">{{ user.role }}</span>
-                        </li>
-                    </ul>
-                </div>
-                
-                <!-- Quick Actions Overview -->
-                <div class="bg-gray-50 p-5 rounded-lg border border-gray-200 flex flex-col justify-center items-center text-center">
-                    <div class="mb-4 text-evsuGoldDark">
-                        <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                    </div>
-                    <p class="text-gray-600 text-sm mb-4">The reporting and claiming functionality is coming soon.</p>
-                    <button class="bg-evsuRed text-white px-4 py-2 rounded shadow opacity-50 cursor-not-allowed">Report Lost Item</button>
-                </div>
+            <div class="pt-8 block">
+                <button onclick="switchView('reports', this)" class="nav-item flex items-center gap-4 px-5 py-3.5 rounded-xl text-white/70 font-medium transition-all w-full text-left hover:bg-white/5 group">
+                    <svg class="w-5 h-5 group-hover:text-evsuGold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    System Reports
+                </button>
+            </div>
+        </nav>
+
+        <div class="p-6 border-t border-white/5">
+            <div class="bg-evsuRedDark p-4 rounded-2xl flex items-center gap-3 shadow-inner">
+                <div class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                <span class="text-[10px] uppercase font-black tracking-widest text-white/40">EVSU Command Center</span>
             </div>
         </div>
-    </main>
+    </aside>
+
+    <!-- Header & Main -->
+    <div class="flex-grow flex flex-col h-full overflow-hidden">
+        
+        <header class="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 flex-shrink-0 z-30">
+            <div class="relative w-96">
+                <!-- Advanced Search -->
+                <input type="text" placeholder="Search Item IDs, Student IDs, or names..." class="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-transparent rounded-xl text-sm outline-none focus:bg-white focus:border-evsuRed/20 transition-all placeholder:text-gray-400 font-medium">
+                <svg class="w-5 h-5 text-gray-400 absolute left-3.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            
+            <div class="flex items-center gap-5">
+                {% if user.role in ['Security', 'Admin', 'Security Guard', 'SAO Admin', 'IT Faculty'] %}
+                    <button class="flex items-center gap-2 bg-evsuGold text-evsuRedDark px-5 py-2.5 rounded-xl font-black text-xs shadow-sm hover:scale-105 transition active:scale-95 uppercase tracking-tight">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v1m0 11v1m8-5h1M3 10h1m15.903-5.903l-.707.707M4.804 15.196l-.707.707m11.801 0l.707.707M4.804 4.804l.707.707M12 7a3 3 0 110 6 3 3 0 010-6z"></path></svg>
+                        Scan QR Code
+                    </button>
+                {% endif %}
+
+                <div class="relative group">
+                    <button class="flex items-center gap-3 bg-gray-50 p-1.5 pr-4 rounded-2xl border border-gray-100 hover:bg-gray-100 transition duration-300">
+                        <div class="w-11 h-11 bg-evsuRed rounded-xl flex items-center justify-center text-white font-black text-xs shadow-md border-b-2 border-evsuRedDark uppercase transition group-hover:scale-105">
+                            {{ user.first_name[0] }}{{ user.last_name[0] }}
+                        </div>
+                        <div class="text-left hidden sm:block">
+                            <p class="text-xs font-black text-gray-900 leading-none">{{ user.first_name }} {{ user.last_name }}</p>
+                            <p class="text-[9px] text-evsuRed font-black uppercase tracking-tighter mt-0.5">
+                                {% if user.role in ['Security', 'Admin', 'Security Guard', 'SAO Admin', 'IT Faculty'] %}
+                                    Security Officer
+                                {% else %}
+                                    {{ user.university_id }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </button>
+                    <div class="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 hidden group-hover:block transition-all backdrop-blur-xl">
+                        <a href="/logout" class="flex items-center gap-3 px-5 py-3 text-sm text-red-600 font-bold hover:bg-red-50 transition border-t border-gray-50 mt-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Sign Out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow overflow-y-auto p-10 custom-scrollbar bg-[#F8F9FA]">
+            
+            {% if user.role in ['Security', 'Admin', 'Security Guard', 'SAO Admin', 'IT Faculty'] %}
+                <!-- ADMIN OVERVIEW -->
+                <section id="view-admin-home" class="view-section active">
+                    <div class="mb-12">
+                        <h1 class="text-5xl font-black text-gray-900 tracking-tight leading-none mb-2 font-sans">Command Center</h1>
+                        <p class="text-base text-gray-400 font-medium tracking-tight">Security oversight and campus inventory management.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
+                        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 group hover:shadow-xl transition-all">
+                            <p class="text-[10px] font-black text-evsuRed uppercase tracking-widest mb-2">Active Cases</p>
+                            <h3 class="text-4xl font-black text-gray-900">142</h3>
+                            <div class="w-full h-1.5 bg-gray-50 rounded-full mt-6 overflow-hidden"><div class="w-2/3 h-full bg-evsuRed"></div></div>
+                        </div>
+                        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 group hover:shadow-xl transition-all">
+                            <p class="text-[10px] font-black text-evsuGoldDark uppercase tracking-widest mb-2">Awaiting SURRENDER</p>
+                            <h3 class="text-4xl font-black text-gray-900">28</h3>
+                            <div class="w-full h-1.5 bg-gray-50 rounded-full mt-6 overflow-hidden"><div class="w-1/3 h-full bg-evsuGold"></div></div>
+                        </div>
+                        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 group hover:shadow-xl transition-all">
+                            <p class="text-[10px] font-black text-green-600 uppercase tracking-widest mb-2">AI Matches</p>
+                            <h3 class="text-4xl font-black text-gray-900">12</h3>
+                            <div class="w-full h-1.5 bg-gray-50 rounded-full mt-6 overflow-hidden"><div class="w-1/2 h-full bg-green-500"></div></div>
+                        </div>
+                        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 group hover:shadow-xl transition-all">
+                            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Storage Load</p>
+                            <h3 class="text-4xl font-black text-gray-900">64%</h3>
+                            <div class="w-full h-1.5 bg-gray-50 rounded-full mt-6 overflow-hidden"><div class="w-3/4 h-full bg-blue-500"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-[3rem] shadow-sm border border-gray-50 p-10 overflow-hidden">
+                        <div class="flex items-center justify-between mb-8 px-2">
+                             <h2 class="text-2xl font-black text-gray-900 tracking-tight">Verification Queue</h2>
+                             <div class="flex gap-3">
+                                 <select class="bg-gray-50 border-none rounded-xl px-4 py-2 text-xs font-bold text-gray-500 outline-none"><option>All Categories</option></select>
+                                 <select class="bg-gray-50 border-none rounded-xl px-4 py-2 text-xs font-bold text-gray-500 outline-none"><option>Campus: Ormoc</option></select>
+                             </div>
+                        </div>
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                                    <th class="px-6 py-4">Item ID</th>
+                                    <th class="px-6 py-4">Reporter</th>
+                                    <th class="px-6 py-4 text-center">Date</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                <tr class="hover:bg-gray-50/50 transition">
+                                    <td class="px-6 py-6 font-black text-evsuRed">#TB-9012</td>
+                                    <td class="px-6 py-6">
+                                        <p class="font-bold text-gray-900 text-sm">Zion Madula</p>
+                                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Student • BSED-2</p>
+                                    </td>
+                                    <td class="px-6 py-6 text-center text-sm font-medium text-gray-500">Oct 24, 2026</td>
+                                    <td class="px-6 py-6 text-right space-x-2">
+                                        <button class="bg-evsuGold text-evsuRedDark px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:shadow-lg transition">Verify</button>
+                                        <button class="border border-evsuRed text-evsuRed px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-red-50 transition">Flag</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            {% else %}
+                <!-- STUDENT VIEWS -->
+                <section id="view-home" class="view-section active">
+                    <div class="mb-12">
+                        <h1 class="text-5xl font-black text-gray-900 tracking-tight leading-none mb-2 font-sans">How's your day, {{ user.first_name }}?</h1>
+                        <p class="text-base text-gray-400 font-medium tracking-tight">Everything is organized. You have 0 new system alerts.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
+                        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex items-center justify-between">
+                            <div><p class="text-[10px] font-black text-evsuRed uppercase tracking-widest mb-2 font-sans">My Reports</p><h3 class="text-4xl font-black text-gray-900">0</h3></div>
+                            <div class="w-14 h-14 bg-red-50 text-evsuRed rounded-2xl flex items-center justify-center opacity-70"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>
+                        </div>
+                        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50 flex items-center justify-between">
+                            <div><p class="text-[10px] font-black text-evsuGoldDark uppercase tracking-widest mb-2 font-sans">Matches</p><h3 class="text-4xl font-black text-gray-900">0</h3></div>
+                            <div class="w-14 h-14 bg-yellow-50 text-evsuGoldDark rounded-2xl flex items-center justify-center opacity-70"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-[3rem] shadow-sm border border-gray-50 p-10 text-center py-24">
+                        <div class="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6"><svg class="w-10 h-10 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-3.586a1 1 0 00-.707.293l-1.414 1.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 009.586 13H4"></path></svg></div>
+                        <h2 class="text-xl font-bold text-gray-900 tracking-tight">No activity found</h2>
+                        <p class="text-gray-400 font-medium mt-1">Start a report to find your belongings.</p>
+                    </div>
+                </section>
+            {% endif %}
+
+            <!-- COMMON VIEWS -->
+             <section id="view-reports" class="view-section text-center py-32"><h2 class="text-2xl font-black text-gray-300">System Reports Module Loaded</h2></section>
+
+        </main>
+    </div>
+
+    <script>
+        function switchView(viewId, btn) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+            const target = document.getElementById('view-' + viewId);
+            if (target) target.classList.add('active');
+        }
+    </script>
 </body>
 </html>

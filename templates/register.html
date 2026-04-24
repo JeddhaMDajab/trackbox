@@ -21,7 +21,7 @@
     
     <!-- Left Side: Action Form (Scrollable) -->
     <div class="w-full md:w-1/2 flex flex-col h-full overflow-y-auto">
-        <!-- Optional Navbar inside left side -->
+        <!-- Optional Navbar inside right side -->
         <header class="p-6 flex justify-between items-center bg-white shadow-sm sticky top-0 z-10 hidden sm:flex">
              <a href="/" class="flex items-center gap-3">
                  <div class="flex items-center justify-center w-10 h-10 bg-evsuRed rounded-lg border-b-[3px] border-evsuRedDark shadow-sm">
@@ -83,7 +83,7 @@
                             <div>
                                 <label for="password" class="block text-sm font-medium text-gray-700">Password <span class="text-red-500">*</span></label>
                                 <div class="relative mt-1 mb-2">
-                                    <input id="password" name="password" type="password" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-evsuRed focus:border-evsuRed sm:text-sm pr-10" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+                                    <input id="password" name="password" type="password" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-evsuRed focus:border-evsuRed sm:text-sm pr-10" placeholder="••••••••">
                                     <button type="button" class="emoji-toggle absolute inset-y-0 right-0 pr-3 flex items-center text-lg" onclick="togglePassword('password', this)" title="Show/Hide Password">🙈</button>
                                 </div>
                                 <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1 hidden" id="strength-container">
@@ -94,7 +94,7 @@
                             <div>
                                 <label for="confirm_password" class="block text-sm font-medium text-gray-700">Confirm Password <span class="text-red-500">*</span></label>
                                 <div class="relative mt-1">
-                                    <input id="confirm_password" name="confirm_password" type="password" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-evsuRed focus:border-evsuRed sm:text-sm pr-10" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+                                    <input id="confirm_password" name="confirm_password" type="password" required class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-evsuRed focus:border-evsuRed sm:text-sm pr-10" placeholder="••••••••">
                                     <button type="button" class="emoji-toggle absolute inset-y-0 right-0 pr-3 flex items-center text-lg" onclick="togglePassword('confirm_password', this)" title="Show/Hide Password">🙈</button>
                                 </div>
                                 <p class="text-xs text-red-600 hidden mt-1" id="match-text">Passwords do not match</p>
@@ -108,7 +108,7 @@
                         </button>
                     </div>
 
-                    <!-- Moved OAuth to bottom -->
+                    <!-- OAuth Separator -->
                     <div class="mt-6 flex items-center pt-2">
                         <div class="flex-grow border-t border-gray-300"></div>
                         <span class="mx-4 text-xs tracking-widest text-gray-400 uppercase">OR</span>
@@ -139,7 +139,7 @@
     <!-- Right Side: Visual Section -->
     <div class="hidden md:flex md:w-1/2 relative bg-gray-900">
         <!-- Background Image (Lost & Found / Campus vibe) -->
-        <img src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=2000&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover">
+        <img src="https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=2000&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover" alt="Campus">
         
         <!-- Maroon Overlay -->
         <div class="absolute inset-0 bg-evsuRed opacity-85 mix-blend-multiply"></div>
@@ -147,7 +147,7 @@
         
         <!-- Overlay Content -->
         <div class="absolute inset-0 flex items-center justify-center p-12 text-center">
-            <div class="max-w-md space-y-6 animate-fade-in-up">
+            <div class="max-w-md space-y-6">
                 <h1 class="text-5xl font-extrabold tracking-tight text-white leading-tight">
                     TrackBox: Reconnecting the EVSU Community
                 </h1>
@@ -231,13 +231,6 @@
                 e.preventDefault();
                 confirmPassword.focus();
                 matchText.classList.remove('hidden');
-            }
-            const pass = password.value;
-            if (pass.length < 8 || !/[A-Z]/.test(pass) || !/[0-9]/.test(pass) || !/[!@#\$%\^&\*\(\),\.\?":\{\}\|\<\>]/.test(pass)) {
-                e.preventDefault();
-                password.focus();
-                strengthText.textContent = 'Must meet all requirements before creating account.';
-                strengthText.className = 'text-xs text-red-600 font-bold';
             }
         });
     </script>
