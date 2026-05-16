@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Guard Command Center | TrackBox EVSU</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+        :root {
+            --primary: #800000; /* EVSU Maroon */
+            --primary-dark: #5e0000;
+            --accent: #FFCC00;  /* EVSU Gold */
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text-main); min-height: 100vh; }
+
+        /* --- NAVIGATION --- */
+        nav {
+            background: var(--primary);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--white);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.2rem; }
+        .nav-brand img { height: 35px; }
+        .nav-user { display: flex; align-items: center; gap: 20px; }
+        .logout-btn { color: var(--white); text-decoration: none; font-size: 0.9rem; font-weight: 600; opacity: 0.8; transition: var(--transition); }
+        .logout-btn:hover { opacity: 1; color: var(--accent); }
+
+        /* --- MAIN LAYOUT --- */
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 350px; gap: 30px; }
+
+        .card { background: var(--white); border-radius: 24px; padding: 35px; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.03); }
+        .card-title { font-size: 1.3rem; font-weight: 800; color: var(--primary); margin-bottom: 25px; display: flex; align-items: center; gap: 12px; }
+        .card-title i { color: var(--accent); }
+
+        /* --- QUICK DROP FORM --- */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: span 2; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-family: inherit; font-size: 0.95rem; transition: var(--transition); background: #fdfdfd;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); background: var(--white); box-shadow: 0 0 0 4px rgba(128, 0, 0, 0.05); }
+
+        .scan-trigger {
+            display: flex; align-items: center; justify-content: center; gap: 10px; background: #f1f5f9; color: var(--primary); border: 2px dashed #cbd5e1;
+            padding: 12px; border-radius: 12px; cursor: pointer; font-weight: 700; transition: var(--transition); margin-bottom: 20px;
+        }
+        .scan-trigger:hover { background: #e2e8f0; border-color: var(--primary); }
+
+        .submit-btn {
+            width: 100%; padding: 16px; background: var(--primary); color: var(--accent); border: none; border-radius: 14px;
+            font-size: 1.1rem; font-weight: 800; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 12px;
+            box-shadow: 0 10px 15px -3px rgba(128, 0, 0, 0.2);
+        }
+        .submit-btn:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(128, 0, 0, 0.25); }
+
+        /* --- GOOGLE AUTH STYLE SCANNER --- */
+        #scanner-modal {
+            position: fixed; inset: 0; z-index: 2000; display: none;
+            background: #000;
+        }
+        .scanner-topbar {
+            position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+            padding: 50px 20px 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .scanner-title { color: white; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px; }
+        .scanner-close-btn {
+            background: rgba(255,255,255,0.2); border: none; color: white;
+            width: 42px; height: 42px; border-radius: 50%; font-size: 1.2rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px); transition: background 0.2s; z-index: 21;
+        }
+        .scanner-close-btn:hover { background: rgba(255,255,255,0.35); }
+
+        /* Force html5-qrcode to fill the entire screen */
+        #reader {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            overflow: hidden !important;
+            background: #000 !important;
+        }
+        /* Target every internal element the library creates */
+        #reader > div,
+        #reader__scan_region,
+        #reader__dashboard_section_csr,
+        #reader__camera_selection_container {
+            width: 100% !important;
+            height: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            background: transparent !important;
+        }
+        #reader video,
+        #reader__scan_region video {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            display: block !important;
+        }
+        #reader canvas,
+        #reader__scan_region canvas {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        /* Hide ALL default library UI */
+        #reader__dashboard,
+        #reader__header_message,
+        #reader__status_span,
+        #reader__dashboard_section_swaplink,
+        #reader__dashboard_section_fsr,
+        #reader img,
+        #reader select,
+        #reader button:not(.scanner-close-btn) {
+            display: none !important;
+        }
+        /* Viewfinder overlay - must be ABOVE canvas (z-index > canvas) */
+        .scan-overlay {
+            position: absolute; inset: 0; z-index: 15; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .scan-cutout {
+            position: relative;
+            width: 260px; height: 260px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+            border-radius: 16px;
+        }
+        /* Corner brackets */
+        .scan-cutout::before, .scan-cutout::after,
+        .corner-br, .corner-bl {
+            content: ''; position: absolute;
+            width: 36px; height: 36px;
+            border-color: #4ade80; border-style: solid;
+        }
+        .scan-cutout::before { top: -3px; left: -3px; border-width: 4px 0 0 4px; border-radius: 12px 0 0 0; }
+        .scan-cutout::after  { top: -3px; right: -3px; border-width: 4px 4px 0 0; border-radius: 0 12px 0 0; }
+        .corner-br { bottom: -3px; right: -3px; border-width: 0 4px 4px 0; border-radius: 0 0 12px 0; }
+        .corner-bl { bottom: -3px; left: -3px;  border-width: 0 0 4px 4px; border-radius: 0 0 0 12px; }
+        /* Animated scan line */
+        .scan-line {
+            position: absolute; left: 4px; right: 4px; height: 3px;
+            background: linear-gradient(to right, transparent, #4ade80, #86efac, #4ade80, transparent);
+            border-radius: 4px;
+            box-shadow: 0 0 12px 3px rgba(74, 222, 128, 0.6);
+            animation: scanMove 2s linear infinite;
+            top: 0;
+        }
+        @keyframes scanMove {
+            0%   { top: 6px; opacity: 1; }
+            48%  { opacity: 1; }
+            50%  { top: calc(100% - 9px); opacity: 0.8; }
+            51%  { opacity: 0; top: calc(100% - 9px); }
+            52%  { opacity: 0; top: 6px; }
+            53%  { opacity: 1; }
+            100% { top: calc(100% - 9px); opacity: 1; }
+        }
+        .scanner-hint {
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
+            padding: 20px 20px 50px;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            text-align: center;
+            color: rgba(255,255,255,0.85); font-size: 0.9rem; font-weight: 500;
+        }
+        .scanner-hint span { display: block; margin-top: 6px; font-size: 0.75rem; opacity: 0.6; }
+
+        /* --- SIDEBAR STATS --- */
+        .sidebar-card { position: sticky; top: 100px; }
+        .stat-item { display: flex; align-items: center; justify-content: space-between; padding: 20px; background: #f8fafc; border-radius: 16px; margin-bottom: 15px; border-left: 5px solid var(--primary); }
+        .stat-info { display: flex; flex-direction: column; }
+        .stat-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        
+        .action-card { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: var(--white); padding: 30px; border-radius: 24px; margin-top: 20px; text-align: center; }
+        .action-card h4 { font-weight: 800; margin-bottom: 10px; color: var(--accent); }
+        .action-card p { font-size: 0.85rem; opacity: 0.9; margin-bottom: 20px; }
+        .btn-verify { background: var(--white); color: var(--primary); padding: 12px 20px; border-radius: 10px; text-decoration: none; font-weight: 800; display: inline-block; transition: var(--transition); }
+        .btn-verify:hover { background: var(--accent); transform: scale(1.05); }
+
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; margin-top: 20px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .sidebar-card { position: static; }
+        }
+
+        @media (max-width: 600px) {
+            nav { padding: 15px 20px; }
+            .nav-brand span { font-size: 1rem; }
+            .nav-user { display: none; } /* Simplified for very small screens or use a menu */
+            .menu-toggle { display: block; background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; }
+        }
+        .menu-toggle { display: none; }
+        @media (max-width: 768px) {
+            .nav-user { display: none; }
+            .menu-toggle { display: block; }
+            .nav-brand span { font-size: 0.9rem; }
+        }
+        
+        /* Mobile Menu Drawer */
+        .mobile-nav {
+            position: fixed; top: 0; left: -100%; width: 250px; height: 100vh; background: var(--primary);
+            z-index: 2001; transition: 0.3s ease; padding: 40px 20px;
+        }
+        .mobile-nav.active { left: 0; }
+        .mobile-nav a { display: block; color: white; text-decoration: none; padding: 15px 0; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-brand">
+            <button class="menu-toggle" onclick="toggleMobileNav()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <img src="/static/EVSU_logo.png" alt="EVSU">
+            <span>TrackBox | Security Portal</span>
+        </div>
+        <div class="nav-user">
+            <div style="text-align: right; margin-right: 15px;">
+                <div style="font-size: 0.9rem; font-weight: 700;">{{ user.first_name }} {{ user.last_name }}</div>
+                <div style="font-size: 0.7rem; color: var(--accent);">Assigned: {{ assigned_building or 'All Campus' }}</div>
+            </div>
+            <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="mobile-nav" id="mobileNav">
+        <div style="margin-bottom: 30px; font-weight: 800; color: var(--accent);">GUARD MENU</div>
+        <a href="/guard/dashboard"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="/guard/qr-scanner"><i class="fas fa-qrcode"></i> QR Scanner</a>
+        <a href="javascript:void(0)" onclick="handleLogout()" style="color: #fca5a5;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="container">
+        <!-- QUICK DROP-OFF SECTION -->
+        <section class="card">
+            <div class="card-title">
+                <i class="fas fa-bolt"></i>
+                <h2>Quick Item Drop-off</h2>
+            </div>
+            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 0.95rem;">Record a found item submitted by a student. Verification of the finder is required.</p>
+
+            <form id="quickDropForm">
+                <div class="scan-trigger" onclick="openScanner()">
+                    <i class="fas fa-qrcode"></i>
+                    <span>Scan Student ID/QR to Verify Finder</span>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Finder (ID or Username)</label>
+                        <input type="text" name="finder_id" id="finder_id" placeholder="Scan or type username..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Item Name</label>
+                        <input type="text" name="item_name" placeholder="e.g. Blue Hydro Flask" required>
+                    </div>
+
+                    <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" required class="form-input">
+                        <option value="">Select Category</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Documents">Documents</option>
+                        <option value="Personal Items">Personal Items</option>
+                        <option value="Books">Books/Stationery</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Building / Department</label>
+                    <select name="building" required class="form-input">
+                        {% if assigned_building %}
+                        <option value="{{ assigned_building }}">{{ assigned_building }} (Current)</option>
+                        {% else %}
+                        <option value="">Select Building</option>
+                        {% for b in all_buildings %}
+                        <option value="{{ b.name }}">{{ b.name }}</option>
+                        {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                    <div class="form-group full-width">
+                        <label>Found In (Location/Building)</label>
+                        <input type="text" name="found_in" placeholder="e.g. Engineering Building Room 203" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Description (Color, Marks, Details)</label>
+                        <textarea name="description" rows="3" placeholder="Provide clear details for matching..."></textarea>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label id="image-label">Photo Reference</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="file-upload-wrapper" style="border: 2px dashed #e2e8f0; padding: 15px; text-align: center; border-radius: 12px; position: relative;">
+                                <i class="fas fa-upload" style="color: var(--primary); margin-bottom: 5px; display: block;"></i>
+                                <span style="font-size: 0.8rem; font-weight: 600;">Upload</span>
+                                <input type="file" id="image-input" name="image" accept="image/*" onchange="previewFile(this)" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
+                            </div>
+                            <button type="button" onclick="openCameraCapture()" class="file-upload-wrapper" style="border: 2px dashed #e2e8f0; background: none; padding: 15px; text-align: center; border-radius: 12px; cursor: pointer;">
+                                <i class="fas fa-camera" style="color: var(--primary); margin-bottom: 5px; display: block;"></i>
+                                <span style="font-size: 0.8rem; font-weight: 600;">Capture</span>
+                            </button>
+                        </div>
+                        <div id="image-preview" style="margin-top: 15px; display: none; text-align: center;">
+                            <img id="preview-img" style="max-width: 100%; border-radius: 12px; height: 120px; object-fit: cover; border: 1px solid #ddd;">
+                            <p style="font-size: 0.75rem; color: var(--success); font-weight: 700; margin-top: 5px;">Photo Selected ✓</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-save"></i>
+                    <span>Record as IN CUSTODY</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- SIDEBAR INFO -->
+        <aside class="sidebar-card">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-shield-alt"></i>
+                    <h2>Status</h2>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-info">
+                        <span class="stat-label">System State</span>
+                        <span class="stat-value" style="color: var(--success); font-size: 1.1rem;"><i class="fas fa-check-circle"></i> Online</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-info">
+                        <span class="stat-label">In Custody</span>
+                        <span class="stat-value">{{ found_count }}</span>
+                    </div>
+                </div>
+                
+                <div class="action-card">
+                    <h4>Handover Verification</h4>
+                    <p>Process a return by scanning the owner's verification QR code.</p>
+                    <a href="/guard/qr-scanner" class="btn-verify">Open Verification Scanner</a>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- GOOGLE AUTH STYLE SCANNER MODAL -->
+    <div id="scanner-modal">
+        <!-- Top Bar -->
+        <div class="scanner-topbar">
+            <span class="scanner-title"><i class="fas fa-qrcode" style="color:#4ade80; margin-right:8px;"></i>Scan Finder's ID</span>
+            <button class="scanner-close-btn" onclick="closeScanner()"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- RAW camera feed - 100% our control -->
+        <video id="qr-video" autoplay playsinline muted
+            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;"></video>
+
+        <!-- Hidden canvas for jsQR processing -->
+        <canvas id="qr-canvas" style="display:none;"></canvas>
+
+        <!-- Viewfinder Overlay -->
+        <div class="scan-overlay">
+            <div class="scan-cutout" id="scan-cutout">
+                <div class="scan-line"></div>
+                <div class="corner-br"></div>
+                <div class="corner-bl"></div>
+            </div>
+        </div>
+
+        <!-- Bottom Hint + Manual Entry -->
+        <div class="scanner-hint">
+            Point the camera at the student's QR code
+            <span>Keep the QR code inside the green frame — it scans automatically</span>
+            <button onclick="manualEntryFallback()" style="
+                margin-top: 14px; display: inline-flex; align-items: center; gap: 8px;
+                background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+                color: white; padding: 9px 20px; border-radius: 100px;
+                font-size: 0.8rem; font-weight: 700; cursor: pointer;
+                backdrop-filter: blur(4px); transition: background 0.2s;
+            " onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                <i class="fas fa-keyboard"></i> Walang QR? Type ID
+            </button>
+        </div>
+    </div>
+    <!-- CAMERA MODAL -->
+    <div id="camera-modal-capture" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+        <video id="video-capture" style="width: 100%; max-width: 500px; border-radius: 24px; background: #000;" autoplay playsinline></video>
+        <div style="margin-top: 25px; display: flex; gap: 20px;">
+            <button onclick="capturePhoto()" style="background: var(--accent); color: var(--primary); border: none; padding: 15px 35px; border-radius: 100px; font-weight: 800; cursor: pointer; font-size: 1rem;">CAPTURE</button>
+            <button onclick="closeCameraCapture()" style="background: white; color: black; border: none; padding: 15px 35px; border-radius: 100px; font-weight: 800; cursor: pointer; font-size: 1rem;">CANCEL</button>
+        </div>
+        <canvas id="canvas-capture" style="display: none;"></canvas>
+    </div>
+
+    <script>
+        // ===== NATIVE getUserMedia + jsQR SCANNER =====
+        let scanStream = null;
+        let scanAnimFrame = null;
+        let scanActive = false;
+
+        async function openScanner() {
+            document.getElementById('scanner-modal').style.display = 'flex';
+            scanActive = true;
+
+            const video = document.getElementById('qr-video');
+            const constraints = {
+                video: {
+                    facingMode: { ideal: 'environment' },
+                    width:  { min: 640, ideal: 1920, max: 1920 },
+                    height: { min: 480, ideal: 1080, max: 1080 },
+                    // Request continuous autofocus (supported in Chrome/Android)
+                    advanced: [{ focusMode: 'continuous' }]
+                }
+            };
+
+            try {
+                scanStream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (e) {
+                // fallback: any camera
+                try { scanStream = await navigator.mediaDevices.getUserMedia({ video: true }); }
+                catch (e2) {
+                    Swal.fire('Camera Error', 'Hindi ma-access ang camera. I-allow ang permissions sa browser.', 'error');
+                    closeScanner(); return;
+                }
+            }
+
+            video.srcObject = scanStream;
+            video.play();
+            video.addEventListener('loadedmetadata', startQRLoop, { once: true });
+        }
+
+        function startQRLoop() {
+            const video  = document.getElementById('qr-video');
+            const canvas = document.getElementById('qr-canvas');
+            const ctx    = canvas.getContext('2d', { willReadFrequently: true });
+
+            function tick() {
+                if (!scanActive) return;
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width  = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0);
+                    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+                    if (code) {
+                        onScanSuccess(code.data);
+                        return; // stop loop
+                    }
+                }
+                scanAnimFrame = requestAnimationFrame(tick);
+            }
+            scanAnimFrame = requestAnimationFrame(tick);
+        }
+
+        function manualEntryFallback() {
+            closeScanner();
+            Swal.fire({
+                title: '<i class="fas fa-id-card" style="color:#800000"></i> Enter Student ID',
+                html: `
+                    <p style="font-size:0.9rem;color:#6b7280;margin-bottom:12px">Type the student's username or ID number manually.</p>
+                    <input id="swal-manual-id" class="swal2-input" placeholder="e.g. student_username or 2024-XXXXX" autocomplete="off" style="font-size:1rem;">
+                `,
+                confirmButtonText: 'Confirm',
+                confirmButtonColor: '#800000',
+                showCancelButton: true,
+                cancelButtonText: 'Cancel',
+                focusConfirm: false,
+                didOpen: () => { document.getElementById('swal-manual-id').focus(); },
+                preConfirm: () => {
+                    const val = document.getElementById('swal-manual-id').value.trim();
+                    if (!val) { Swal.showValidationMessage('Please enter a username or ID'); return false; }
+                    return val;
+                }
+            }).then(result => {
+                if (result.isConfirmed && result.value) {
+                    document.getElementById('finder_id').value = result.value;
+                    Swal.fire({
+                        icon: 'success',
+                        title: '\u2714 Finder Set',
+                        html: `<b>${result.value}</b><br><small style="color:#6b7280">Manually entered</small>`,
+                        timer: 1800, timerProgressBar: true, showConfirmButton: false,
+                        background: '#f0fdf4', iconColor: '#16a34a'
+                    });
+                }
+            });
+        }
+
+        function onScanSuccess(decodedText) {
+            // Flash green corners
+            const cutout = document.getElementById('scan-cutout');
+            if (cutout) cutout.style.filter = 'brightness(2)';
+
+            let username = decodedText.trim();
+            if (username.startsWith('USER|')) username = username.split('|')[1];
+
+            closeScanner();
+            document.getElementById('finder_id').value = username;
+            Swal.fire({
+                icon: 'success',
+                title: '\u2714 Finder Verified!',
+                html: `<b style="font-size:1.1rem">${username}</b><br><small style="color:#6b7280">Username has been filled in</small>`,
+                timer: 2200,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                background: '#f0fdf4',
+                iconColor: '#16a34a'
+            });
+        }
+
+        function closeScanner() {
+            scanActive = false;
+            if (scanAnimFrame) { cancelAnimationFrame(scanAnimFrame); scanAnimFrame = null; }
+            if (scanStream)    { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+            const video = document.getElementById('qr-video');
+            if (video) video.srcObject = null;
+            document.getElementById('scanner-modal').style.display = 'none';
+        }
+
+        function previewFile(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById('preview-img').src = e.target.result;
+                    document.getElementById('image-preview').style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        let captureStream = null;
+        async function openCameraCapture() {
+            document.getElementById('camera-modal-capture').style.display = 'flex';
+            try {
+                captureStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                document.getElementById('video-capture').srcObject = captureStream;
+            } catch (err) {
+                alert("Camera access denied or not available");
+                closeCameraCapture();
+            }
+        }
+
+        function closeCameraCapture() {
+            if (captureStream) captureStream.getTracks().forEach(t => t.stop());
+            document.getElementById('camera-modal-capture').style.display = 'none';
+        }
+
+        function toggleMobileNav() {
+            document.getElementById('mobileNav').classList.toggle('active');
+        }
+
+        window.onclick = function(event) {
+            const nav = document.getElementById('mobileNav');
+            const toggle = document.querySelector('.menu-toggle');
+            if (event.target !== nav && event.target !== toggle && !nav.contains(event.target) && nav.classList.contains('active')) {
+                nav.classList.remove('active');
+            }
+        }
+
+        function handleLogout() {
+            window.location.href = '/logout';
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('video-capture');
+            const canvas = document.getElementById('canvas-capture');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            canvas.toBlob(blob => {
+                const file = new File([blob], "guard_capture.jpg", { type: "image/jpeg" });
+                const container = new DataTransfer();
+                container.items.add(file);
+                document.getElementById('image-input').files = container.files;
+                
+                document.getElementById('preview-img').src = canvas.toDataURL('image/jpeg');
+                document.getElementById('image-preview').style.display = 'block';
+                closeCameraCapture();
+            }, 'image/jpeg');
+        }
+
+        document.getElementById('quickDropForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            const formData = new FormData(this);
+            formData.append('token', '{{ token }}');
+
+            try {
+                const res = await fetch('/guard/quick-drop', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: data.message,
+                        confirmButtonColor: '#800000'
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Failed', text: data.message, confirmButtonColor: '#800000' });
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save"></i> Record as IN CUSTODY';
+                }
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Connection failed' });
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Record as IN CUSTODY';
+            }
+        });
+    </script>
+</body>
+</html>

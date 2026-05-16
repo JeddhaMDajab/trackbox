@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard | TrackBox EVSU</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #800000;
+            --primary-dark: #5e0000;
+            --accent: #FFCC00;
+            --bg: #f4f7f6;
+            --white: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #6b7280;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --sidebar-width: 280px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
+
+        /* --- SIDEBAR --- */
+        .sidebar { 
+            width: var(--sidebar-width); 
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%); 
+            color: var(--white); 
+            position: fixed; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            z-index: 1000; 
+            box-shadow: 10px 0 30px rgba(128, 0, 0, 0.1); 
+        }
+        .sidebar-brand { padding: 30px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar-brand img { height: 40px; }
+        .sidebar-brand span { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
+        
+        .sidebar nav { padding: 30px 0; flex-grow: 1; }
+        .sidebar nav a { 
+            display: flex; align-items: center; gap: 15px; padding: 16px 30px; 
+            color: rgba(255, 255, 255, 0.7); text-decoration: none; font-weight: 500; 
+            transition: var(--transition); border-left: 4px solid transparent; 
+        }
+        .sidebar nav a i { font-size: 1.2rem; width: 20px; text-align: center; }
+        .sidebar nav a:hover { background: rgba(255, 255, 255, 0.05); color: var(--white); }
+        .sidebar nav a.active { color: var(--white); background: rgba(255, 255, 255, 0.08); border-left-color: var(--accent); }
+        .sidebar nav a.active i { color: var(--accent); }
+
+        .btn-logout-sidebar { 
+            margin-top: auto; padding: 25px 30px; color: #fca5a5; 
+            text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1); transition: var(--transition);
+        }
+        .btn-logout-sidebar:hover { background: rgba(239, 68, 68, 0.1); color: #fee2e2; }
+
+        /* --- MAIN CONTENT --- */
+        .main { flex: 1; margin-left: var(--sidebar-width); padding: 40px; width: calc(100% - var(--sidebar-width)); }
+
+        /* --- TOPBAR --- */
+        .topbar { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 40px; background: var(--white); padding: 20px 35px;
+            border-radius: 20px; box-shadow: var(--shadow);
+        }
+        .topbar-left h1 { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        .topbar-right { display: flex; align-items: center; gap: 20px; }
+
+        /* NOTIFICATIONS */
+        .notif-wrapper { position: relative; }
+        .notif-btn { 
+            background: #f8fafc; border: none; width: 45px; height: 45px; border-radius: 12px; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; 
+            transition: var(--transition); position: relative; font-size: 1.2rem; color: var(--primary);
+        }
+        .notif-btn:hover { background: #f1f5f9; transform: translateY(-2px); }
+        .notif-badge { 
+            position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; 
+            font-size: 0.7rem; font-weight: 800; width: 20px; height: 20px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; border: 2px solid var(--white); 
+        }
+        .notif-dropdown { 
+            position: absolute; top: 55px; right: 0; width: 320px; background: var(--white); 
+            border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: none; z-index: 1100; border: 1px solid #f1f5f9; overflow: hidden; 
+        }
+        .notif-header { padding: 15px 20px; border-bottom: 1px solid #f1f5f9; font-weight: 700; font-size: 0.9rem; background: #f9fafb; }
+        .notif-list { max-height: 350px; overflow-y: auto; }
+        .notif-item { padding: 15px 20px; border-bottom: 1px solid #f8fafc; transition: var(--transition); }
+        .notif-item:hover { background: #f8fafc; }
+        .notif-item p { margin: 0 0 5px 0; font-size: 0.85rem; line-height: 1.4; color: var(--text-main); }
+        .notif-item span { font-size: 0.7rem; color: var(--text-muted); }
+
+        /* --- STATS GRID --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        .stat-card { 
+            background: var(--white); padding: 30px; border-radius: 24px; box-shadow: var(--shadow); 
+            border: 1px solid #f0f0f0; transition: var(--transition); position: relative; overflow: hidden;
+        }
+        .stat-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .stat-card .icon-bg { 
+            position: absolute; right: -10px; top: -10px; font-size: 5rem; color: rgba(128, 0, 0, 0.03); 
+            transform: rotate(-15deg); pointer-events: none; 
+        }
+        .stat-card .label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .stat-card .value { display: block; font-size: 2.2rem; font-weight: 800; color: var(--primary); line-height: 1; margin-bottom: 8px; }
+        .stat-card .desc { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+
+        /* --- CHARTS --- */
+        .charts-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; }
+        .chart-card { background: var(--white); padding: 35px; border-radius: 24px; box-shadow: var(--shadow); border: 1px solid #f0f0f0; }
+        .chart-card h3 { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
+        .chart-card h3 i { color: var(--accent); }
+
+        @media (max-width: 1024px) { 
+            .sidebar { width: 85px; } 
+            .sidebar-brand span, .sidebar nav a span, .btn-logout-sidebar span { display: none; } 
+            .main { margin-left: 85px; width: calc(100% - 85px); } 
+            .sidebar-brand { padding: 20px; justify-content: center; }
+            .sidebar nav a { padding: 20px; justify-content: center; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -280px; width: 280px; transition: transform 0.3s ease; }
+            .sidebar.active { transform: translateX(280px); left: 0; }
+            .sidebar-brand span, .sidebar nav a span, .btn-logout-sidebar span { display: flex; }
+            .main { margin-left: 0; width: 100%; padding: 20px; }
+            .topbar { flex-direction: column; gap: 20px; align-items: flex-start; padding: 20px; margin-top: 60px; }
+            .menu-toggle { display: block; position: fixed; top: 20px; left: 20px; z-index: 1100; background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 12px; cursor: pointer; }
+            .charts-container { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+        .menu-toggle { display: none; }
+    </style>
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="/static/EVSU_logo.png" alt="EVSU">
+            <span>TrackBox</span>
+        </div>
+        <nav>
+            <a href="javascript:void(0)" onclick="showSection('overview')" class="active"><i class="fas fa-chart-line"></i><span>Overview</span></a>
+            <a href="javascript:void(0)" onclick="showSection('verify')" id="nav-verify"><i class="fas fa-shield-alt"></i><span>Verification Queue</span></a>
+            <a href="javascript:void(0)" onclick="showSection('users')"><i class="fas fa-users-cog"></i><span>Manage Users</span></a>
+            <a href="javascript:void(0)" onclick="showSection('buildings')"><i class="fas fa-building"></i><span>Manage Buildings</span></a>
+            <a href="javascript:void(0)" onclick="showSection('reports')"><i class="fas fa-file-invoice"></i><span>Monthly Reports</span></a>
+            <a href="javascript:void(0)" onclick="showSection('backup')"><i class="fas fa-database"></i><span>Data Backup</span></a>
+            <a href="javascript:void(0)" onclick="goTo('found-items')"><i class="fas fa-box-open"></i><span>Found Items</span></a>
+            <a href="javascript:void(0)" onclick="goTo('qr-scanner')"><i class="fas fa-qrcode"></i><span>QR Scanner</span></a>
+        </nav>
+        <a href="javascript:void(0)" onclick="handleLogout()" class="btn-logout-sidebar">
+            <i class="fas fa-sign-out-alt"></i><span>Log Out</span>
+        </a>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div class="topbar-left">
+                <h1>Overview</h1>
+            </div>
+            <div class="topbar-right">
+                <div class="notif-wrapper">
+                    <button class="notif-btn" id="notif-btn" onclick="toggleNotif()">
+                        <i class="fas fa-bell"></i>
+                        {% if unread_count > 0 %}
+                        <span class="notif-badge" id="notif-badge">{{ unread_count }}</span>
+                        {% endif %}
+                    </button>
+                    <div class="notif-dropdown" id="notifDropdown">
+                        <div class="notif-header">System Notifications</div>
+                        <div class="notif-list">
+                            {% if notifications %}
+                            {% for note in notifications %}
+                            <div class="notif-item">
+                                <p>{{ note.message }}</p>
+                                <span>{{ note.created_at.strftime('%b %d, %H:%M') }}</span>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                                <i class="fas fa-check-circle" style="display:block; font-size:2rem; margin-bottom:10px; color:#10b981;"></i>
+                                No new notifications
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT AREA -->
+        <div id="overviewSection">
+            <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-search icon-bg"></i>
+                <span class="label">Lost Items</span>
+                <span class="value">{{ lost_count }}</span>
+                <span class="desc">Active missing reports</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-box icon-bg"></i>
+                <span class="label">Found Items</span>
+                <span class="value">{{ found_count }}</span>
+                <span class="desc">Unclaimed findings</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-handshake icon-bg"></i>
+                <span class="label">Returned</span>
+                <span class="value">{{ returned_count }}</span>
+                <span class="desc">Successful recoveries</span>
+            </div>
+            <div class="stat-card" style="background: var(--primary); color: white;">
+                <i class="fas fa-percentage icon-bg" style="color: rgba(255,255,255,0.1);"></i>
+                <span class="label" style="color: rgba(255,255,255,0.7);">Return Rate</span>
+                <span class="value" id="return-rate" style="color: var(--accent);">0%</span>
+                <span class="desc" id="building-label" style="color: rgba(255,255,255,0.7);">All Campus</span>
+            </div>
+        </div>
+
+        <!-- BUILDING FILTER -->
+        <div style="margin-bottom: 30px; display: flex; align-items: center; gap: 15px;">
+            <label style="font-weight: 700; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase;">Filter by Building:</label>
+            <select id="buildingFilter" onchange="loadDashboardStats(this.value)" style="padding: 10px 20px; border-radius: 12px; border: 1px solid #ddd; font-family: inherit; font-weight: 600;">
+                <option value="All Campus">All Campus</option>
+                <option value="Main Building">Main Building</option>
+                <option value="Engineering Building">Engineering Building</option>
+                <option value="Computer Studies Building">Computer Studies Building</option>
+                <option value="Business & Management Building">Business & Management Building</option>
+                <option value="Education Building">Education Building</option>
+                <option value="Library & Admin">Library & Admin</option>
+                <option value="Student Center">Student Center</option>
+                <option value="Gymnasium">Gymnasium</option>
+                <option value="Security Post (Main Gate)">Security Post (Main Gate)</option>
+                <option value="Security Post (Back Gate)">Security Post (Back Gate)</option>
+            </select>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-pie"></i> Distribution Overview</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-bar"></i> Category Analytics</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+            </div>
+        </div>
+        
+        <!-- VERIFICATION QUEUE SECTION -->
+        <div id="verifySection" style="display: none;" class="chart-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h3 style="margin: 0;"><i class="fas fa-shield-alt"></i> Verification Queue</h3>
+                <span id="queue-count" class="badge" style="background: var(--primary); color: white; padding: 5px 15px;">0 Pending</span>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 2px solid #f1f5f9; color: var(--text-muted); font-size: 0.8rem;">
+                            <th style="padding: 15px;">Item</th>
+                            <th style="padding: 15px;">Type</th>
+                            <th style="padding: 15px;">Reporter</th>
+                            <th style="padding: 15px;">Date Reported</th>
+                            <th style="padding: 15px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verifyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- USER MANAGEMENT SECTION -->
+        <div id="userSection" style="display: none;" class="chart-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h3 style="margin: 0;"><i class="fas fa-users-cog"></i> User Management</h3>
+                <div style="display: flex; gap: 15px;">
+                    <button onclick="toggleAddUser()" class="stat-card" style="padding: 10px 20px; font-size: 0.8rem; border-color: var(--primary); color: var(--primary); cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: none;">
+                        <i class="fas fa-user-plus"></i> Add New User
+                    </button>
+                    <button onclick="hideUsers()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-weight: 700;">Close</button>
+                </div>
+            </div>
+
+            <!-- ADD USER FORM (Hidden) -->
+            <div id="addUserForm" style="display: none; background: #f8fafc; padding: 25px; border-radius: 16px; margin-bottom: 30px; border: 1px dashed #cbd5e1;">
+                <h4 style="margin-bottom: 20px; font-size: 0.9rem; color: var(--primary);">Register New Staff/User</h4>
+                <form id="adminAddUserForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <input type="text" name="username" placeholder="Username" required style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <input type="text" name="first_name" placeholder="First Name" required style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <input type="text" name="last_name" placeholder="Last Name" required style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <input type="email" name="email" placeholder="Email (@evsu.edu.ph)" required style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <input type="password" name="password" placeholder="Password" required style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <select name="role" required style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                        <option value="guard">Security Guard</option>
+                        <option value="admin">System Admin</option>
+                        <option value="student">Student</option>
+                    </select>
+                    <button type="submit" style="background: var(--primary); color: white; border: none; border-radius: 8px; padding: 10px; font-weight: 700; cursor: pointer; grid-column: span 1;">Create Account</button>
+                </form>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 2px solid #f1f5f9; color: var(--text-muted);">
+                            <th style="padding: 15px;">Username</th>
+                            <th style="padding: 15px;">Role / Building</th>
+                            <th style="padding: 15px;">Status</th>
+                            <th style="padding: 15px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- Users will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- BUILDING MANAGEMENT SECTION -->
+        <div id="buildingSection" style="display: none;" class="chart-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h3 style="margin: 0;"><i class="fas fa-building"></i> Building Management</h3>
+                <button onclick="addBuildingPrompt()" class="stat-card" style="padding: 10px 20px; font-size: 0.8rem; border-color: var(--primary); color: var(--primary); cursor: pointer; box-shadow: none;">
+                    <i class="fas fa-plus"></i> Add Building
+                </button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 2px solid #f1f5f9; color: var(--text-muted);">
+                            <th style="padding: 15px;">Building Name</th>
+                            <th style="padding: 15px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="buildingTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <!-- REPORTS MANAGEMENT SECTION -->
+        <div id="reportSection" style="display: none;" class="chart-card">
+            <h3 style="margin-bottom: 25px;"><i class="fas fa-file-invoice"></i> Generate Monthly Reports</h3>
+            <p style="color: var(--text-muted); margin-bottom: 30px;">Select a month and year to download a professional report. Excel files include automatic column fitting for better readability.</p>
+            
+            <div style="display: flex; gap: 20px; align-items: flex-end; background: #f8fafc; padding: 30px; border-radius: 20px;">
+                <div style="flex: 1;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">Month & Year</label>
+                    <input type="month" id="reportMonth" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-family: inherit;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">Building (Optional)</label>
+                    <select id="reportBuilding" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-family: inherit;">
+                        <option value="All Campus">All Campus</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="downloadReport('xlsx')" style="background: #10b981; color: white; border: none; padding: 14px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-file-excel"></i> Excel (.xlsx)
+                    </button>
+                    <button onclick="downloadReport('docx')" style="background: #2563eb; color: white; border: none; padding: 14px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-file-word"></i> Word (.docx)
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- BACKUP MANAGEMENT SECTION -->
+        <div id="backupSection" style="display: none;" class="chart-card">
+            <h3 style="margin-bottom: 25px;"><i class="fas fa-database"></i> Database & Security Backup</h3>
+            <p style="color: var(--text-muted); margin-bottom: 40px;">Ensure your data is safe by downloading a full backup of the TrackBox database. It is recommended to perform a backup weekly.</p>
+            
+            <div style="background: #f8fafc; padding: 40px; border-radius: 24px; text-align: center; border: 2px dashed #e2e8f0;">
+                <div style="font-size: 3rem; color: var(--primary); margin-bottom: 20px;"><i class="fas fa-cloud-download-alt"></i></div>
+                <h4 style="margin-bottom: 10px;">Full System Backup</h4>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 30px;">This will export the entire <b>trackbox.db</b> file containing all users, items, and audit logs.</p>
+                <button onclick="downloadBackup()" style="background: var(--primary); color: white; border: none; padding: 15px 40px; border-radius: 14px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 12px; box-shadow: 0 10px 20px rgba(128,0,0,0.1);">
+                    <i class="fas fa-download"></i> Create & Download Backup
+                </button>
+            </div>
+            
+            <div style="margin-top: 40px; padding: 20px; border-radius: 12px; background: #fffbeb; border: 1px solid #fef3c7; display: flex; gap: 15px; align-items: center;">
+                <i class="fas fa-info-circle" style="color: #92400e; font-size: 1.2rem;"></i>
+                <p style="font-size: 0.85rem; color: #92400e;"><b>Tip:</b> Backups are downloaded in <b>.db</b> format. You can open them using any SQLite viewer to inspect historical data.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const token = "{{ token }}";
+        let statusChart, categoryChart;
+
+        async function loadDashboardStats(building = "All Campus") {
+            // Load buildings for filter first
+            await loadBuildingsForFilter();
+            
+            try {
+                const res = await fetch(`/admin/stats?building=${building}`);
+                const stats = await res.json();
+
+                document.querySelector('.stats-grid .stat-card:nth-child(1) .value').innerText = stats.lost;
+                document.querySelector('.stats-grid .stat-card:nth-child(2) .value').innerText = stats.found;
+                document.querySelector('.stats-grid .stat-card:nth-child(3) .value').innerText = stats.returned;
+                document.getElementById('building-label').innerText = stats.building;
+
+                const total = stats.lost + stats.found + stats.returned;
+                const rate = total > 0 ? Math.round((stats.returned / total) * 100) : 0;
+                document.getElementById('return-rate').innerText = rate + '%';
+
+                if (statusChart) statusChart.destroy();
+                statusChart = new Chart(document.getElementById('statusChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Lost', 'Found', 'Returned'],
+                        datasets: [{
+                            data: [stats.lost, stats.found, stats.returned],
+                            backgroundColor: ['#ef4444', '#FFCC00', '#10b981'],
+                            hoverOffset: 15,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 25, font: { family: 'Poppins', size: 12 } } } } }
+                });
+
+                const catLabels = Object.keys(stats.categories);
+                const catData = Object.values(stats.categories);
+
+                if (categoryChart) categoryChart.destroy();
+                categoryChart = new Chart(document.getElementById('categoryChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            label: 'Items',
+                            data: catData,
+                            backgroundColor: '#800000',
+                            borderRadius: 12,
+                            hoverBackgroundColor: '#5e0000'
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Poppins' } } }, x: { grid: { display: false }, ticks: { font: { family: 'Poppins' } } } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            } catch (e) { console.error("Stats load err:", e); }
+        }
+
+        async function toggleNotif() {
+            const dropdown = document.getElementById('notifDropdown');
+            const badge = document.getElementById('notif-badge');
+            if (dropdown.style.display !== 'block') {
+                dropdown.style.display = 'block';
+                if (badge) {
+                    badge.style.display = 'none';
+                    try { await fetch('/notifications/mark-read', { method: 'POST' }); } catch (err) { }
+                }
+            } else { dropdown.style.display = 'none'; }
+        }
+
+        window.onclick = function(e) { if (!e.target.closest('#notif-btn') && !e.target.closest('#notifDropdown')) document.getElementById('notifDropdown').style.display = 'none'; }
+        window.onload = () => loadDashboardStats();
+
+        async function showUsers() {
+            try {
+                document.querySelector('.stats-grid').style.display = 'none';
+                document.querySelector('.charts-container').style.display = 'none';
+                document.getElementById('userSection').style.display = 'block';
+                
+                const tbody = document.getElementById('userTableBody');
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Fetching users...</td></tr>';
+                
+                console.log("Fetching users with token:", token);
+                const res = await fetch(`/admin/users?token=${token}`);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                
+                const users = await res.json();
+                console.log("Users received:", users);
+                
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);">No users found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = users.map(u => `
+                    <tr style="border-bottom: 1px solid #f8fafc;">
+                        <td style="padding: 15px;">
+                            <div style="font-weight: 700;">${u.username}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${u.email}</div>
+                        </td>
+                        <td style="padding: 15px;">
+                            <div style="font-weight: 700;">${u.role.toUpperCase()}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${u.assigned_building || 'All Campus'}</div>
+                        </td>
+                        <td style="padding: 15px;">
+                            <span class="badge" style="background: ${u.is_active ? '#ecfdf5' : '#fef2f2'}; color: ${u.is_active ? '#065f46' : '#991b1b'}; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; text-transform: uppercase;">
+                                ${u.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td style="padding: 15px;">
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <select id="role-${u.id}" style="padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.8rem;">
+                                    <option value="student" ${u.role === 'student' ? 'selected' : ''}>Student</option>
+                                    <option value="guard" ${u.role === 'guard' ? 'selected' : ''}>Guard</option>
+                                    <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                </select>
+                                <select id="bldg-${u.id}" style="padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.8rem;">
+                                    <option value="">No Building</option>
+                                    <option value="Main Building" ${u.assigned_building === 'Main Building' ? 'selected' : ''}>Main Building</option>
+                                    <option value="Engineering Building" ${u.assigned_building === 'Engineering Building' ? 'selected' : ''}>Engineering Building</option>
+                                    <option value="Computer Studies Building" ${u.assigned_building === 'Computer Studies Building' ? 'selected' : ''}>Computer Studies Building</option>
+                                    <option value="Business & Management Building" ${u.assigned_building === 'Business & Management Building' ? 'selected' : ''}>Business & Management Building</option>
+                                    <option value="Education Building" ${u.assigned_building === 'Education Building' ? 'selected' : ''}>Education Building</option>
+                                    <option value="Library & Admin" ${u.assigned_building === 'Library & Admin' ? 'selected' : ''}>Library & Admin</option>
+                                    <option value="Student Center" ${u.assigned_building === 'Student Center' ? 'selected' : ''}>Student Center</option>
+                                    <option value="Gymnasium" ${u.assigned_building === 'Gymnasium' ? 'selected' : ''}>Gymnasium</option>
+                                    <option value="Security Post (Main Gate)" ${u.assigned_building === 'Security Post (Main Gate)' ? 'selected' : ''}>Security Post (Main Gate)</option>
+                                    <option value="Security Post (Back Gate)" ${u.assigned_building === 'Security Post (Back Gate)' ? 'selected' : ''}>Security Post (Back Gate)</option>
+                                </select>
+                                <button onclick="updateUser(${u.id})" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;" title="Update Role/Building"><i class="fas fa-save"></i></button>
+                                <button onclick="toggleUserStatus(${u.id})" style="background:${u.is_active ? '#ef4444' : '#10b981'}; color:white; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;" title="${u.is_active ? 'Deactivate' : 'Activate'}">
+                                    <i class="fas ${u.is_active ? 'fa-user-slash' : 'fa-user-check'}"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error("Error in showUsers:", err);
+                Swal.fire({ icon: 'error', title: 'Fetch Failed', text: 'Could not load user list. Please check your connection or try logging in again.' });
+                hideUsers();
+            }
+        }
+
+        function toggleAddUser() {
+            const form = document.getElementById('addUserForm');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function loadVerificationQueue() {
+            const tbody = document.getElementById('verifyTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;"><i class="fas fa-spinner fa-spin"></i> Checking for reports...</td></tr>';
+            
+            try {
+                const res = await fetch(`/items/all?token=${token}`);
+                const all = await res.json();
+                const pending = all.filter(i => i.status === "Pending");
+                
+                document.getElementById('queue-count').innerText = `${pending.length} Pending`;
+                
+                if (pending.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; color:var(--text-muted);"><i class="fas fa-check-circle" style="display:block; font-size:2rem; margin-bottom:10px; color:#10b981;"></i>All reports verified!</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = pending.map(i => `
+                    <tr style="border-bottom: 1px solid #f8fafc;">
+                        <td style="padding: 15px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                ${i.image ? `<img src="/uploads/${i.image}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">` : `<div style="width:40px; height:40px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#cbd5e1;"><i class="fas fa-image"></i></div>`}
+                                <div style="font-weight:700;">${i.item_name}</div>
+                            </div>
+                        </td>
+                        <td style="padding: 15px;"><span class="badge" style="background:${i.type==='lost'?'#fee2e2':'#fef3c7'}; color:${i.type==='lost'?'#991b1b':'#92400e'};">${i.type.toUpperCase()}</span></td>
+                        <td style="padding: 15px;">${i.reporter}</td>
+                        <td style="padding: 15px; font-size:0.8rem; color:var(--text-muted);">${i.reported_at}</td>
+                        <td style="padding: 15px;">
+                            <div style="display:flex; gap:10px;">
+                                <button onclick="approveItem('${i.type}', ${i.id})" style="background:#10b981; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:700;"><i class="fas fa-check"></i> Approve</button>
+                                <button onclick="rejectItem('${i.type}', ${i.id})" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:700;"><i class="fas fa-times"></i> Reject</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Error loading queue.</td></tr>'; }
+        }
+
+        async function approveItem(type, id) {
+            const fd = new FormData(); fd.append('token', token);
+            const res = await fetch(`/admin/approve-item/${type}/${id}`, { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'Verified', text: data.message, timer: 1500 });
+                loadVerificationQueue();
+            }
+        }
+
+        async function rejectItem(type, id) {
+            Swal.fire({
+                title: 'Reject Report?',
+                text: "Are you sure you want to delete this report? This action cannot be undone.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, Reject'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const res = await fetch(`/admin/delete/${id}?token=${token}&table=${type==='lost'?'lost':'found'}`, { method: "DELETE" });
+                    if (res.ok) { Swal.fire('Rejected', 'Report has been removed.', 'success'); loadVerificationQueue(); }
+                }
+            });
+        }
+
+        document.getElementById('adminAddUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.append('token', token);
+
+            const res = await fetch('/admin/create-user', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'Account Created', text: data.message });
+                this.reset();
+                toggleAddUser();
+                showUsers(); // Refresh list
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+            }
+        });
+
+        function showSection(s) {
+            document.getElementById('overviewSection').style.display = s === 'overview' ? 'block' : 'none';
+            document.getElementById('verifySection').style.display = s === 'verify' ? 'block' : 'none';
+            document.getElementById('userSection').style.display = s === 'users' ? 'block' : 'none';
+            document.getElementById('buildingSection').style.display = s === 'buildings' ? 'block' : 'none';
+            document.getElementById('reportSection').style.display = s === 'reports' ? 'block' : 'none';
+            document.getElementById('backupSection').style.display = s === 'backup' ? 'block' : 'none';
+            
+            // Update active link
+            document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+            if (s === 'overview') document.querySelector('.sidebar nav a:nth-child(1)').classList.add('active');
+            if (s === 'verify') { document.getElementById('nav-verify').classList.add('active'); loadVerificationQueue(); }
+            if (s === 'users') { document.querySelector('.sidebar nav a:nth-child(3)').classList.add('active'); showUsers(); }
+            if (s === 'buildings') { document.querySelector('.sidebar nav a:nth-child(4)').classList.add('active'); loadBuildings(); }
+            if (s === 'reports') { document.querySelector('.sidebar nav a:nth-child(5)').classList.add('active'); loadBuildingsForReports(); }
+            if (s === 'backup') { document.querySelector('.sidebar nav a:nth-child(6)').classList.add('active'); }
+        }
+
+        function downloadBackup() {
+            Swal.fire({
+                title: 'Prepare Backup?',
+                text: "The system will generate a snapshot of the current database.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#800000',
+                confirmButtonText: 'Download Now'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/admin/backup/download?token=${token}`;
+                }
+            });
+        }
+
+        async function loadBuildingsForReports() {
+            const res = await fetch('/api/buildings');
+            const data = await res.json();
+            const select = document.getElementById('reportBuilding');
+            select.innerHTML = '<option value="All Campus">All Campus</option>' + 
+                data.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+        }
+
+        function downloadReport(type) {
+            const dateVal = document.getElementById('reportMonth').value;
+            if (!dateVal) {
+                Swal.fire({ icon: 'warning', title: 'Selection Required', text: 'Please select a month and year.' });
+                return;
+            }
+            const [year, month] = dateVal.split('-');
+            const bldg = document.getElementById('reportBuilding').value;
+            
+            const endpoint = type === 'xlsx' ? '/admin/export/report' : '/admin/export/report/docx';
+            const url = `${endpoint}?token=${token}&month=${parseInt(month)}&year=${year}&building=${encodeURIComponent(bldg)}`;
+            window.location.href = url;
+        }
+
+        async function loadBuildingsForFilter() {
+            const res = await fetch('/api/buildings');
+            const data = await res.json();
+            const filter = document.getElementById('buildingFilter');
+            const currentVal = filter.value;
+            filter.innerHTML = '<option value="All Campus">All Campus</option>' + 
+                data.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+            filter.value = currentVal;
+        }
+
+        async function loadBuildings() {
+            const res = await fetch('/api/buildings');
+            const data = await res.json();
+            document.getElementById('buildingTableBody').innerHTML = data.map(b => `
+                <tr style="border-bottom: 1px solid #f8fafc;">
+                    <td style="padding: 15px; font-weight: 600;">${b.name}</td>
+                    <td style="padding: 15px;">
+                        <button onclick="deleteBuilding(${b.id})" style="background: #fee2e2; color: #991b1b; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function addBuildingPrompt() {
+            const { value: name } = await Swal.fire({
+                title: 'Add New Building',
+                input: 'text',
+                inputLabel: 'Building Name',
+                showCancelButton: true
+            });
+            if (name) {
+                const fd = new FormData(); fd.append('token', token); fd.append('name', name);
+                const res = await fetch('/admin/buildings/add', { method: 'POST', body: fd });
+                if ((await res.json()).success) loadBuildings();
+            }
+        }
+
+        async function deleteBuilding(id) {
+            if (!confirm("Are you sure?")) return;
+            const fd = new FormData(); fd.append('token', token); fd.append('b_id', id);
+            const res = await fetch('/admin/buildings/delete', { method: 'POST', body: fd });
+            if ((await res.json()).success) loadBuildings();
+        }
+
+        async function toggleUserStatus(userId) {
+            const fd = new FormData();
+            fd.append('token', token);
+            fd.append('user_id', userId);
+            
+            const res = await fetch('/admin/toggle-user-status', { method: 'POST', body: fd });
+            const data = await res.json();
+            
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'Status Updated', text: data.message, timer: 1500 });
+                showUsers();
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+            }
+        }
+        async function updateUser(userId) {
+            const newRole = document.getElementById(`role-${userId}`).value;
+            const bldgEl = document.getElementById(`bldg-${userId}`);
+            const newBldg = bldgEl ? bldgEl.value : null;
+            
+            const fd = new FormData();
+            fd.append('token', token);
+            fd.append('user_id', userId);
+            fd.append('new_role', newRole);
+            fd.append('assigned_building', newBldg);
+            
+            const res = await fetch('/admin/change-role', { method: 'POST', body: fd });
+            const data = await res.json();
+            
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'Updated', text: data.message, timer: 1500 });
+                showUsers(); // Refresh
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+            }
+        }
+
+        function goTo(section) {
+            const paths = { 'lost-items': '/admin/lost-items', 'found-items': '/admin/found-items', 'qr-scanner': '/admin/qr-scanner' };
+            window.location.href = `${paths[section]}?token=${token}`;
+        }
+
+        function handleLogout() {
+            Swal.fire({
+                title: 'Exit Command Center?', text: "Are you sure you want to log out?", icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#800000', confirmButtonText: 'Yes, Exit'
+            }).then((r) => { if (r.isConfirmed) window.location.href = "/logout"; });
+        }
+
+        function toggleNotif() {
+            const dropdown = document.getElementById('notifDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Close sidebar/dropdown when clicking outside
+        window.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+            if (window.innerWidth <= 768 && 
+                sidebar && toggle &&
+                !sidebar.contains(e.target) && 
+                !toggle.contains(e.target) && 
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+            if (!e.target.closest('.notif-wrapper')) {
+                const dropdown = document.getElementById('notifDropdown');
+                if (dropdown) dropdown.style.display = 'none';
+            }
+        });
+
+        // Lock navigation
+        (function() { history.pushState(null, null, location.href); window.onpopstate = () => history.pushState(null, null, location.href); })();
+    </script>
+</body>
+</html>

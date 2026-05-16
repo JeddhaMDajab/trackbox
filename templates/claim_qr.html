@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claim Item QR</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #ffffff !important;
+      color: #000000 !important;
+    }
+
+    .card {
+      background: white;
+      width: 100%;
+      max-width: 340px;
+      padding: 30px 25px;
+      border-radius: 16px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+      text-align: center;
+      animation: fadeIn 0.4s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h3 {
+      margin-top: 0;
+      color: #2d6cdf;
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+
+    p {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    .qr-code-container {
+      background: #f8f9ff;
+      padding: 20px;
+      border-radius: 12px;
+      display: inline-block;
+      margin-bottom: 25px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      transition: 0.2s ease;
+    }
+
+    .save-btn {
+      background: #28a745;
+      color: white;
+    }
+
+    .save-btn:hover {
+      background: #218838;
+    }
+
+    .close-btn {
+      background: #dc3545;
+      color: white;
+    }
+
+    .close-btn:hover {
+      background: #c82333;
+    }
+
+    small {
+      display: block;
+      margin-top: 10px;
+      color: #777;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <div style="background: #800000; color: white; padding: 20px; border-radius: 12px 12px 0 0; margin: -30px -25px 25px -25px;">
+      <h3 style="color: white; margin: 0; font-size: 1.2rem;">Verification QR</h3>
+    </div>
+    
+    <p style="margin-top: 25px;">Show this to the finder or guard to claim your item.</p>
+
+    <div class="qr-code-container">
+      <div id="qr-code"></div>
+    </div>
+
+    <div class="buttons">
+      <button class="save-btn" onclick="saveQRCode()" style="background: #FFCC00; color: #800000;">Save Image</button>
+      <button class="close-btn" onclick="window.close()" style="background: #6b7280;">Close</button>
+    </div>
+  </div>
+
+  <script>
+    window.onload = function() {
+      const params = new URLSearchParams(window.location.search);
+      const itemId = params.get('item_id');
+      const username = params.get('username');
+      const qrData = encodeURIComponent(`TBX|${itemId}|${username}`);
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrData}&ecc=M`;
+      
+      document.getElementById("qr-code").innerHTML = `<img src="${qrUrl}" alt="QR Code" id="qr-img" style="display:block; margin:0 auto;">`;
+    };
+
+    function saveQRCode() {
+      const params = new URLSearchParams(window.location.search);
+      const itemId = params.get('item_id');
+      const username = params.get('username');
+      const qrData = `TBX|${itemId}|${username}`;
+      window.location.href = `/download_qr?data=${encodeURIComponent(qrData)}`;
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search Items | TrackBox EVSU</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #800000;
+            --primary-dark: #5e0000;
+            --accent: #FFCC00;
+            --bg: #f4f7f6;
+            --white: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #6b7280;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text-main); display: flex; min-height: 100vh; }
+
+        /* --- SIDEBAR --- */
+        .sidebar { width: 280px; background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%); color: var(--white); position: fixed; height: 100vh; display: flex; flex-direction: column; z-index: 1000; box-shadow: 10px 0 30px rgba(128, 0, 0, 0.1); }
+        .sidebar-brand { padding: 30px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar-brand img { height: 40px; }
+        .sidebar-brand span { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
+        .sidebar nav { padding: 30px 0; flex-grow: 1; }
+        .sidebar nav a { display: flex; align-items: center; gap: 15px; padding: 16px 30px; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-weight: 500; transition: var(--transition); border-left: 4px solid transparent; }
+        .sidebar nav a i { font-size: 1.2rem; }
+        .sidebar nav a:hover { background: rgba(255, 255, 255, 0.05); color: var(--white); }
+        .sidebar nav a.active { color: var(--white); background: rgba(255, 255, 255, 0.08); border-left-color: var(--accent); }
+        .sidebar nav a.active i { color: var(--accent); }
+
+        /* --- TOPBAR --- */
+        .topbar { position: fixed; top: 0; left: 280px; right: 0; height: 80px; background: var(--white); display: flex; justify-content: space-between; align-items: center; padding: 0 40px; z-index: 900; box-shadow: 0 2px 15px rgba(0,0,0,0.03); }
+        .topbar-left h2 { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
+
+        /* --- MAIN CONTENT --- */
+        .main { flex: 1; margin-left: 280px; padding: 120px 40px 40px 40px; }
+        .content-wrapper { max-width: 1100px; margin: 0 auto; }
+
+        .search-card {
+            background: var(--white);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .search-card h1 { font-size: 2.2rem; font-weight: 800; color: var(--primary); text-align: center; margin-bottom: 10px; }
+        .search-card p.subtitle { color: var(--text-muted); text-align: center; margin-bottom: 35px; }
+
+        .search-form { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-control { width: 100%; padding: 14px 18px; border-radius: 14px; border: 1px solid #e5e7eb; font-family: inherit; font-size: 0.95rem; transition: var(--transition); background: #f9fafb; }
+        .form-control:focus { outline: none; border-color: var(--primary); background: var(--white); box-shadow: 0 0 0 4px rgba(128,0,0,0.05); }
+
+        .file-dropzone {
+            border: 2px dashed #e5e7eb;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            background: #f9fafb;
+            transition: var(--transition);
+            cursor: pointer;
+            position: relative;
+        }
+        .file-dropzone:hover { border-color: var(--primary); background: #fdf2f2; }
+        .file-dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .file-dropzone i { font-size: 1.5rem; color: var(--primary); margin-bottom: 8px; display: block; }
+        .file-dropzone p { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+
+        .btn-search {
+            grid-column: span 2;
+            padding: 16px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 10px 20px rgba(128,0,0,0.2);
+            margin-top: 10px;
+        }
+        .btn-search:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+        /* --- RESULTS TABLE --- */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .section-header h3 { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
+
+        .results-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); margin-bottom: 40px; }
+        .results-table thead { background: var(--primary); color: var(--white); }
+        .results-table th { padding: 20px; text-align: left; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .results-table td { padding: 20px; border-bottom: 1px solid #f3f4f6; font-size: 0.95rem; }
+
+        .item-cell { display: flex; align-items: center; gap: 15px; }
+        .item-thumb { width: 55px; height: 55px; border-radius: 12px; object-fit: cover; background: #f3f4f6; }
+        
+        .badge { padding: 6px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .badge-lost { background: #fee2e2; color: #991b1b; }
+        .badge-found { background: #dcfce7; color: #166534; }
+        .badge-match { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; }
+
+        .btn-claim { background: var(--primary); color: white; border: none; padding: 8px 18px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: var(--transition); }
+        .btn-claim:hover { background: var(--primary-dark); transform: scale(1.05); }
+
+        /* --- MODAL --- */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-box { background: white; border-radius: 30px; padding: 40px; width: 100%; max-width: 450px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.2); animation: slideUp 0.3s ease; }
+        #qr-code { background: white; padding: 15px; border-radius: 15px; display: inline-block; margin-bottom: 25px; border: 1px solid #eee; }
+        .btn-save { background: var(--primary); color: white; padding: 12px 25px; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; margin-right: 10px; }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 85px; }
+            .sidebar-brand span, .sidebar nav a span { display: none; }
+            .sidebar-brand { justify-content: center; padding: 20px; }
+            .sidebar nav a { justify-content: center; padding: 20px; }
+            .topbar, .main { left: 85px; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -280px; width: 280px; transition: transform 0.3s ease; }
+            .sidebar.active { transform: translateX(280px); left: 0; }
+            .sidebar-brand span, .sidebar nav a span { display: flex; }
+            .topbar, .main { left: 0; }
+            .topbar { padding: 0 20px; }
+            .menu-toggle { display: block; }
+            .main { padding: 100px 20px 40px 20px; }
+            .search-card { padding: 30px 20px; border-radius: 20px; }
+            .search-card h1 { font-size: 1.6rem; }
+            .search-form { grid-template-columns: 1fr; gap: 20px; }
+            .btn-search { grid-column: 1; }
+            .results-table { display: block; overflow-x: auto; white-space: nowrap; }
+            .modal-box { width: 90%; padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="/static/EVSU_logo.png" alt="EVSU">
+            <span>TrackBox</span>
+        </div>
+        <nav>
+            <a href="/student/dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
+            <a href="/user_account"><i class="fas fa-user-circle"></i><span>My Account</span></a>
+            <a href="/report_lost"><i class="fas fa-plus-square"></i><span>Report Item</span></a>
+            <a href="/search_lost" class="active"><i class="fas fa-search"></i><span>Search Items</span></a>
+        </nav>
+    </aside>
+
+    <header class="topbar">
+        <div class="topbar-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2>Search Database</h2>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="content-wrapper">
+            <div class="search-card">
+                <h1>Find Belongings</h1>
+                <p class="subtitle">Search using keywords or visual similarity to find matching reports</p>
+
+                <form method="post" enctype="multipart/form-data" class="search-form">
+                    <input type="hidden" name="token" value="{{ token }}">
+
+                    <div class="form-group">
+                        <label>Keyword Search</label>
+                        <input type="text" name="query" class="form-control" placeholder="Item name, color, category...">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Visual Search</label>
+                        <div class="file-dropzone">
+                            <i class="fas fa-camera"></i>
+                            <p>Upload photo for visual match</p>
+                            <input type="file" name="image" accept="image/*">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-search">
+                        <i class="fas fa-search"></i>
+                        Execute Search
+                    </button>
+                </form>
+            </div>
+
+            {% if searched %}
+            <div class="section-header">
+                <h3>Search Results ({{ results|length }})</h3>
+            </div>
+            {% if results|length == 0 %}
+                <div style="text-align:center; padding:60px; background:white; border-radius:30px; box-shadow:var(--shadow);">
+                    <i class="fas fa-search-minus" style="font-size:3rem; color:var(--text-muted); margin-bottom:15px;"></i>
+                    <h4>No items matched your search.</h4>
+                    <p style="color:var(--text-muted);">Try different keywords or check back later.</p>
+                </div>
+            {% else %}
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Item Details</th>
+                            <th>Category</th>
+                            <th>Relevance</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in results %}
+                        <tr>
+                            <td>
+                                <div class="item-cell">
+                                    {% if item.image %}
+                                    <img src="/uploads/{{ item.image }}" class="item-thumb">
+                                    {% else %}
+                                    <div class="item-thumb" style="display:flex; align-items:center; justify-content:center; color:#ccc;"><i class="fas fa-image"></i></div>
+                                    {% endif %}
+                                    <div>
+                                        <div style="font-weight:700;">{{ item.item_name }}</div>
+                                        <div style="font-size:0.8rem; color:var(--text-muted);">{{ item.location }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ item.category }}</td>
+                            <td>
+                                {% if item.similarity %}
+                                <span class="badge badge-match">{{ "%.0f"|format(item.similarity * 100) }}% Visual Match</span>
+                                {% else %}
+                                <span class="badge" style="background:#f3f4f6; color:#4b5563;">Keyword Match</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.type == 'found' and not item.is_claimed %}
+                                <button class="btn-claim" onclick="showQRModal('{{ item.id }}', '{{ user.username }}')">Claim Item</button>
+                                {% elif item.is_claimed %}
+                                <span style="color:var(--success); font-weight:700;"><i class="fas fa-check-circle"></i> Complete</span>
+                                {% else %}
+                                <span style="color:var(--text-muted);">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+            {% endif %}
+
+            <div class="section-header" style="margin-top:20px;">
+                <h3>Recent Campus Activity</h3>
+            </div>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Reported Item</th>
+                        <th>Category</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in lost_items %}
+                    <tr>
+                        <td>
+                            <div class="item-cell">
+                                {% if item.image %}
+                                <img src="/uploads/{{ item.image }}" class="item-thumb">
+                                {% else %}
+                                <div class="item-thumb" style="display:flex; align-items:center; justify-content:center; color:#ccc;"><i class="fas fa-image"></i></div>
+                                {% endif %}
+                                <span style="font-weight:700;">{{ item.item_name }}</span>
+                            </div>
+                        </td>
+                        <td>{{ item.category }}</td>
+                        <td><span class="badge badge-{{ item.type }}">{{ item.type }}</span></td>
+                        <td style="color:var(--text-muted); font-size:0.85rem;">{{ item.created_at.strftime('%b %d, %Y') }}</td>
+                        <td>
+                            {% if item.type == 'found' and not item.is_claimed %}
+                            <button class="btn-claim" onclick="showQRModal('{{ item.id }}', '{{ user.username }}')">Claim</button>
+                            {% elif item.is_claimed %}
+                            <span style="color:var(--success); font-weight:700;"><i class="fas fa-check-circle"></i></span>
+                            {% else %}
+                            <span style="color:var(--text-muted);">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="qr-modal" class="modal">
+        <div class="modal-box">
+            <h3 style="color: var(--primary);">Verification QR</h3>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin:15px 0 25px 0;">Show this QR code to the university admin to verify your identity and claim the item.</p>
+            
+            <div id="qr-code"></div>
+
+            <div style="display:flex; gap:10px;">
+                <button class="btn-save" onclick="saveQRCode()" style="flex:1;">Save Image</button>
+                <button onclick="closeQRModal()" class="btn-save" style="background:#f3f4f6; color:#4b5563; flex:1;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Close sidebar when clicking outside on mobile
+        window.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !toggle.contains(e.target) && 
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
+        let currentQRData = "";
+        function showQRModal(itemId, username) {
+            document.getElementById('qr-modal').style.display = 'flex';
+            currentQRData = `TBX|${itemId}|${username}`;
+            const qrDataEncoded = encodeURIComponent(currentQRData);
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrDataEncoded}&ecc=M`;
+            document.getElementById('qr-code').innerHTML = `<img src="${qrUrl}" alt="QR" id="qr-img" style="display:block; margin:0 auto;">`;
+        }
+        function saveQRCode() {
+            if (currentQRData) {
+                window.location.href = `/download_qr?data=${encodeURIComponent(currentQRData)}`;
+            }
+        }
+        function closeQRModal() { document.getElementById('qr-modal').style.display = 'none'; }
+    </script>
+</body>
+</html>

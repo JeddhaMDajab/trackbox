@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <title>Claim Item</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .modal-content {
+      background-color: white;
+      padding: 30px 25px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+      transition: transform 0.2s;
+    }
+
+    .modal-content:hover {
+      transform: translateY(-5px);
+    }
+
+    h3 {
+      margin-bottom: 20px;
+      color: #2d6cdf;
+    }
+
+    .qr-code-container {
+      margin: 20px 0;
+      padding: 15px;
+      border: 2px dashed #2d6cdf;
+      border-radius: 12px;
+      display: inline-block;
+      background-color: #f9faff;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .modal-buttons button {
+      flex: 1;
+      padding: 10px 0;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 14px;
+    }
+
+    #save-qr {
+      background-color: #28a745;
+      color: white;
+    }
+
+    #save-qr:hover {
+      background-color: #1e7b34;
+    }
+
+    #close-qr {
+      background-color: #d9534f;
+      color: white;
+    }
+
+    #close-qr:hover {
+      background-color: #b94743;
+    }
+
+    @media (max-width: 400px) {
+      .modal-content {
+        padding: 25px 15px;
+      }
+
+      .modal-buttons button {
+        font-size: 13px;
+        padding: 8px 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="modal-content">
+    <h3>Scan this QR Code to Claim</h3>
+    <div id="qr-code" class="qr-code-container"></div>
+    <div class="modal-buttons">
+      <button id="save-qr" onclick="saveQRCode()">Save QR</button>
+      <button id="close-qr" onclick="window.close()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // Generate QR code on page load
+    window.onload = function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const itemId = urlParams.get('item_id');
+      const username = urlParams.get('username');
+      const qrData = `CLAIM ITEM ${itemId} BY ${username}`;
+      
+      new QRCode(document.getElementById("qr-code"), {
+        text: qrData,
+        width: 160,
+        height: 160,
+        colorDark: "#2d6cdf",
+        colorLight: "#f9faff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    };
+
+    // Save QR code
+    function saveQRCode() {
+      const qrCodeImg = document.querySelector('#qr-code img');
+      if (qrCodeImg) {
+        const link = document.createElement('a');
+        link.href = qrCodeImg.src;
+        link.download = 'claim-qr-code.png';
+        link.click();
+      } else {
+        alert('No QR code to save!');
+      }
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,145 @@
+/* Reset */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Body */
+body {
+    background: #eef2f7;
+    padding: 20px;
+}
+
+/* Container */
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.header h2 {
+    flex-grow: 1;
+    text-align: center;
+    font-size: 24px;
+    color: #333;
+}
+
+.back-btn {
+    text-decoration: none;
+    color: #007bff;
+    font-size: 16px;
+}
+
+.back-btn:hover {
+    text-decoration: underline;
+}
+
+/* Sections */
+.section {
+    margin-bottom: 30px;
+}
+
+/* Labels and Inputs */
+label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: block;
+    color: #555;
+}
+
+input[type=text],
+input[type=password],
+textarea,
+select {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    margin-bottom: 15px;
+    font-size: 14px;
+    transition: border 0.3s;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+/* Buttons */
+button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 15px;
+    transition: background 0.3s;
+}
+
+.post-btn {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.post-btn:hover {
+    background-color: #218838;
+}
+
+.logout-btn {
+    background-color: #dc3545;
+    color: #fff;
+    width: 100%;
+}
+
+.logout-btn:hover {
+    background-color: #c82333;
+}
+
+.edit-btn {
+    background-color: #ffc107;
+    color: #212529;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+    margin-top: 10px;
+    display: inline-block;
+}
+
+.edit-btn:hover {
+    background-color: #e0a800;
+}
+
+/* Post Cards */
+.post-card {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border-left: 4px solid #007bff;
+}
+
+.post-card img {
+    max-width: 200px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+/* Responsive */
+@media screen and (max-width: 600px) {
+    .header h2 { font-size: 20px; }
+    .post-card img { max-width: 100%; }
+}

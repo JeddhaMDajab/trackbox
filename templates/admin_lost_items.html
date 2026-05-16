@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Lost Items | TrackBox EVSU Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #800000;
+            --primary-dark: #5e0000;
+            --accent: #FFCC00;
+            --bg: #f4f7f6;
+            --white: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #6b7280;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --sidebar-width: 280px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text-main); display: flex; min-height: 100vh; }
+
+        /* --- SIDEBAR --- */
+        .sidebar { width: var(--sidebar-width); background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%); color: var(--white); position: fixed; height: 100vh; display: flex; flex-direction: column; z-index: 1000; }
+        .sidebar-brand { padding: 30px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar-brand img { height: 40px; }
+        .sidebar-brand span { font-size: 1.4rem; font-weight: 800; }
+        
+        .sidebar nav { padding: 30px 0; flex-grow: 1; }
+        .sidebar nav a { display: flex; align-items: center; gap: 15px; padding: 16px 30px; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-weight: 500; transition: var(--transition); border-left: 4px solid transparent; }
+        .sidebar nav a i { font-size: 1.2rem; width: 20px; text-align: center; }
+        .sidebar nav a:hover { background: rgba(255, 255, 255, 0.05); color: var(--white); }
+        .sidebar nav a.active { color: var(--white); background: rgba(255, 255, 255, 0.08); border-left-color: var(--accent); }
+        .sidebar nav a.active i { color: var(--accent); }
+
+        .btn-logout-sidebar { margin-top: auto; padding: 25px 30px; color: #fca5a5; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+
+        /* --- MAIN --- */
+        .main { flex: 1; margin-left: var(--sidebar-width); padding: 40px; width: calc(100% - var(--sidebar-width)); }
+
+        .top-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .top-section h1 { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+        
+        .search-box { position: relative; width: 350px; }
+        .search-box input { width: 100%; padding: 14px 20px 14px 45px; border-radius: 14px; border: 1px solid #e5e7eb; outline: none; transition: var(--transition); font-family: inherit; font-size: 0.9rem; background: var(--white); }
+        .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(128,0,0,0.05); }
+        .search-box i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+
+        /* --- TABLE --- */
+        .card { background: var(--white); border-radius: 24px; box-shadow: var(--shadow); overflow: hidden; border: 1px solid #f0f0f0; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: var(--primary); color: var(--white); }
+        th { padding: 20px; text-align: left; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 20px; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; vertical-align: middle; }
+        tr:hover { background: #fafafa; }
+
+        .item-info { display: flex; align-items: center; gap: 15px; }
+        .item-img { width: 55px; height: 55px; border-radius: 12px; object-fit: cover; background: #f3f4f6; border: 1px solid #eee; }
+        
+        .badge { padding: 6px 12px; border-radius: 100px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+        .badge-lost { background: #fee2e2; color: #991b1b; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-approved { background: #ecfdf5; color: #065f46; }
+
+        .btn-action { padding: 8px 16px; border-radius: 10px; border: none; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: var(--transition); background: #f3f4f6; color: #4b5563; }
+        .btn-action:hover { background: #e5e7eb; color: var(--primary); }
+
+        @media (max-width: 1024px) { 
+            .sidebar { width: 85px; } 
+            .sidebar-brand span, .sidebar nav a span, .btn-logout-sidebar span { display: none; } 
+            .sidebar-brand { justify-content: center; padding: 20px; }
+            .sidebar nav a { justify-content: center; padding: 20px; }
+            .main { margin-left: 85px; width: calc(100% - 85px); } 
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -280px; width: 280px; transition: transform 0.3s ease; }
+            .sidebar.active { transform: translateX(280px); left: 0; }
+            .sidebar-brand span, .sidebar nav a span, .btn-logout-sidebar span { display: flex; }
+            .main { margin-left: 0; width: 100%; padding: 20px; }
+            .top-section { flex-direction: column; align-items: flex-start; gap: 20px; margin-top: 60px; }
+            .search-box { width: 100%; }
+            .menu-toggle { display: block; position: fixed; top: 20px; left: 20px; z-index: 1100; background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 12px; cursor: pointer; }
+            .card { display: block; overflow-x: auto; white-space: nowrap; }
+        }
+        .menu-toggle { display: none; }
+    </style>
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+    <aside class="sidebar">
+        <div class="sidebar-brand"><img src="/static/EVSU_logo.png" alt="EVSU"><span>TrackBox</span></div>
+        <nav>
+            <a href="/admin/dashboard"><i class="fas fa-chart-line"></i><span>Overview</span></a>
+            <a href="javascript:void(0)" onclick="goTo('lost-items')" class="active"><i class="fas fa-search-location"></i><span>Lost Items</span></a>
+            <a href="javascript:void(0)" onclick="goTo('found-items')"><i class="fas fa-box-open"></i><span>Found Items</span></a>
+            <a href="javascript:void(0)" onclick="goTo('qr-scanner')"><i class="fas fa-qrcode"></i><span>QR Scanner</span></a>
+        </nav>
+        <a href="javascript:void(0)" onclick="handleLogout()" class="btn-logout-sidebar"><i class="fas fa-sign-out-alt"></i><span>Log Out</span></a>
+    </aside>
+
+    <main class="main">
+        <div class="top-section">
+            <h1>Lost Reports Registry</h1>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchBar" placeholder="Search by name, category, or student...">
+            </div>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item Details</th>
+                        <th>Category</th>
+                        <th>Reported By</th>
+                        <th>Last Seen</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsTable"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        const token = "{{ token }}";
+        function goTo(s) { window.location.href = `/admin/${s}?token=${token}`; }
+        
+        let allLostItems = [];
+        async function loadItems() {
+            try {
+                const res = await fetch(`/items/all?token=${token}`);
+                const items = await res.json();
+                allLostItems = items.filter(i => i.type === 'lost');
+                renderTable(allLostItems);
+            } catch (e) { Swal.fire('Error', 'Failed to synchronize with database', 'error'); }
+        }
+
+        function renderTable(items) {
+            const tableBody = document.getElementById("itemsTable");
+            if (items.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:60px; color:var(--text-muted);">
+                    <i class="fas fa-folder-open" style="font-size:3rem; display:block; margin-bottom:15px;"></i>No reports found matching your criteria</td></tr>`;
+                return;
+            }
+            tableBody.innerHTML = "";
+            items.forEach(item => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>
+                        <div class="item-info">
+                            ${item.image ? `<img src="/uploads/${item.image}" class="item-img">` : `<div class="item-img" style="display:flex; align-items:center; justify-content:center; color:#ccc;"><i class="fas fa-image"></i></div>`}
+                            <div><div style="font-weight:700;">${item.item_name}</div><div style="font-size:0.75rem; color:var(--text-muted);">Ref: #${item.id}</div></div>
+                        </div>
+                    </td>
+                    <td>${item.category}</td>
+                    <td><div style="font-weight:600;">${item.reporter || 'Anonymous'}</div></td>
+                    <td><span style="color:var(--text-muted);"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>${item.location || 'N/A'}</span></td>
+                    <td>${item.reported_at.split(' ')[0]}</td>
+                    <td>
+                        <span class="badge ${item.status === 'Approved' ? 'badge-approved' : 'badge-pending'}">
+                            ${item.status || 'Active Lost'}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:8px;">
+                            ${item.status === 'Pending' ? `<button class="btn-action" style="background:#10b981; color:white;" onclick="approveItem(${item.id})">Approve</button>` : ''}
+                            <button class="btn-action" onclick="confirmDelete(${item.id})">Archive</button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        document.getElementById('searchBar').addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase();
+            renderTable(allLostItems.filter(i => i.item_name.toLowerCase().includes(q) || i.category.toLowerCase().includes(q) || (i.reporter && i.reporter.toLowerCase().includes(q))));
+        });
+
+        async function approveItem(id) {
+            const fd = new FormData(); fd.append('token', token);
+            const res = await fetch(`/admin/approve-item/lost/${id}`, { method: 'POST', body: fd });
+            if ((await res.json()).success) { Swal.fire('Approved', 'Item is now visible.', 'success'); loadItems(); }
+        }
+
+        function confirmDelete(id) {
+            Swal.fire({ title: 'Archive this report?', text: "It will be hidden from public lists.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#800000', confirmButtonText: 'Yes, Archive' }).then(async (r) => {
+                if (r.isConfirmed) {
+                    const res = await fetch(`/admin/delete/${id}?token=${token}&table=lost`, { method: "DELETE" });
+                    if (res.ok) { Swal.fire('Archived', 'Record moved to history.', 'success'); loadItems(); }
+                }
+            });
+        }
+
+        function handleLogout() {
+            Swal.fire({ title: 'Log Out?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#800000', confirmButtonText: 'Exit' }).then((r) => { if (r.isConfirmed) window.location.href = "/logout"; });
+        }
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        window.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+            if (window.innerWidth <= 768 && sidebar && toggle &&
+                !sidebar.contains(e.target) && !toggle.contains(e.target) && 
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", loadItems);
+    </script>
+</body>
+</html>

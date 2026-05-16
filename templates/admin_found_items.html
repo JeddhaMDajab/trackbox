@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Found Items Inventory | TrackBox EVSU Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #800000;
+            --primary-dark: #5e0000;
+            --accent: #FFCC00;
+            --bg: #f4f7f6;
+            --white: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #6b7280;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --sidebar-width: 280px;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text-main); display: flex; min-height: 100vh; }
+
+        /* --- SIDEBAR --- */
+        .sidebar { width: var(--sidebar-width); background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%); color: var(--white); position: fixed; height: 100vh; display: flex; flex-direction: column; z-index: 1000; }
+        .sidebar-brand { padding: 30px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar-brand img { height: 40px; }
+        .sidebar-brand span { font-size: 1.4rem; font-weight: 800; }
+        
+        .sidebar nav { padding: 30px 0; flex-grow: 1; }
+        .sidebar nav a { display: flex; align-items: center; gap: 15px; padding: 16px 30px; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-weight: 500; transition: var(--transition); border-left: 4px solid transparent; }
+        .sidebar nav a i { font-size: 1.2rem; width: 20px; text-align: center; }
+        .sidebar nav a:hover { background: rgba(255, 255, 255, 0.05); color: var(--white); }
+        .sidebar nav a.active { color: var(--white); background: rgba(255, 255, 255, 0.08); border-left-color: var(--accent); }
+        .sidebar nav a.active i { color: var(--accent); }
+
+        /* --- MAIN --- */
+        .main { flex: 1; margin-left: var(--sidebar-width); padding: 40px; width: calc(100% - var(--sidebar-width)); }
+
+        .top-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .top-section h1 { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+        
+        .filter-group { display: flex; gap: 15px; }
+        .search-box { position: relative; width: 300px; }
+        .search-box input, .status-select { padding: 12px 15px; border-radius: 12px; border: 1px solid #e5e7eb; outline: none; font-family: inherit; font-size: 0.85rem; background: var(--white); }
+        .search-box input { padding-left: 40px; width: 100%; }
+        .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .status-select { cursor: pointer; color: var(--text-main); font-weight: 600; }
+
+        /* --- TABLE --- */
+        .card { background: var(--white); border-radius: 24px; box-shadow: var(--shadow); overflow: hidden; border: 1px solid #f0f0f0; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: var(--primary); color: var(--white); }
+        th { padding: 18px 20px; text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 18px 20px; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; }
+        tr:hover { background: #fafafa; }
+
+        .item-info { display: flex; align-items: center; gap: 12px; }
+        .item-img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #f3f4f6; }
+        
+        .badge { padding: 5px 10px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+        .badge-office { background: #dcfce7; color: #166534; }
+        .badge-custody { background: #fff7ed; color: #9a3412; }
+        .badge-returned { background: #f3f4f6; color: #4b5563; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-approved { background: #ecfdf5; color: #065f46; }
+
+        .btn-action { padding: 8px 12px; border-radius: 8px; border: none; font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: var(--transition); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-verify { background: #f59e0b; color: white; }
+        .btn-archive { background: transparent; color: var(--text-muted); }
+        .btn-archive:hover { color: var(--primary); }
+
+        @media (max-width: 1024px) { 
+            .sidebar { width: 85px; } 
+            .sidebar-brand span, .sidebar nav a span { display: none; } 
+            .sidebar-brand { justify-content: center; padding: 20px; }
+            .sidebar nav a { justify-content: center; padding: 20px; }
+            .main { margin-left: 85px; width: calc(100% - 85px); } 
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -280px; width: 280px; transition: transform 0.3s ease; }
+            .sidebar.active { transform: translateX(280px); left: 0; }
+            .sidebar-brand span, .sidebar nav a span { display: flex; }
+            .main { margin-left: 0; width: 100%; padding: 20px; }
+            .top-section { flex-direction: column; align-items: flex-start; gap: 20px; margin-top: 60px; }
+            .filter-group { flex-direction: column; width: 100%; }
+            .search-box { width: 100%; }
+            .menu-toggle { display: block; position: fixed; top: 20px; left: 20px; z-index: 1100; background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 12px; cursor: pointer; }
+            .card { display: block; overflow-x: auto; white-space: nowrap; }
+        }
+        .menu-toggle { display: none; }
+    </style>
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand"><img src="/static/EVSU_logo.png" alt="EVSU"><span>TrackBox</span></div>
+        <nav>
+            <a href="/admin/dashboard"><i class="fas fa-chart-line"></i><span>Overview</span></a>
+            <a href="javascript:void(0)" onclick="goTo('lost-items')"><i class="fas fa-search-location"></i><span>Lost Items</span></a>
+            <a href="javascript:void(0)" onclick="goTo('found-items')" class="active"><i class="fas fa-box-open"></i><span>Found Items</span></a>
+            <a href="javascript:void(0)" onclick="goTo('qr-scanner')"><i class="fas fa-qrcode"></i><span>QR Scanner</span></a>
+        </nav>
+        <a href="javascript:void(0)" onclick="handleLogout()" style="margin-top:auto; padding:25px 30px; color:#fca5a5; text-decoration:none; font-weight:600; display:flex; align-items:center; gap:12px; border-top:1px solid rgba(255,255,255,0.1);"><i class="fas fa-sign-out-alt"></i><span>Log Out</span></a>
+    </aside>
+
+    <main class="main">
+        <div class="top-section">
+            <h1>Found Items Inventory</h1>
+            <div class="filter-group">
+                <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchBar" placeholder="Filter by name, ID..."></div>
+                <select id="filterStatus" class="status-select">
+                    <option value="all">All Status</option>
+                    <option value="unclaimed">In Office</option>
+                    <option value="claimed">Returned</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Inventory Item</th>
+                        <th>Category</th>
+                        <th>Reported Location</th>
+                        <th>Date Received</th>
+                        <th>Current Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsTable"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        const token = "{{ token }}";
+        function goTo(s) { window.location.href = `/admin/${s}?token=${token}`; }
+        
+        let allFoundItems = [];
+        async function loadItems() {
+            try {
+                const res = await fetch(`/items/all?token=${token}`);
+                const items = await res.json();
+                allFoundItems = items.filter(i => i.type === 'found');
+                applyFilters();
+            } catch (e) { console.error(e); }
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchBar').value.toLowerCase();
+            const s = document.getElementById('filterStatus').value;
+            const filtered = allFoundItems.filter(i => {
+                const matchesSearch = i.item_name.toLowerCase().includes(q) || i.category.toLowerCase().includes(q) || i.location.toLowerCase().includes(q);
+                let matchesStatus = (s === 'all');
+                if (s === 'claimed') matchesStatus = i.is_claimed;
+                if (s === 'unclaimed') matchesStatus = !i.is_claimed && i.is_verified;
+                return matchesSearch && matchesStatus;
+            });
+            renderTable(filtered);
+        }
+
+        function renderTable(items) {
+            const tbody = document.getElementById("itemsTable");
+            if (items.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:50px; color:var(--text-muted);">No inventory matches your filters</td></tr>`; return; }
+            tbody.innerHTML = "";
+            items.forEach(item => {
+                const isP2P = item.status && item.status.includes("Peer-to-Peer");
+                let statusBadge = "", actionBtn = "";
+
+                if (item.is_claimed) {
+                    statusBadge = `<span class="badge badge-returned">Returned</span>`;
+                    actionBtn = `<span style="color:var(--success); font-weight:700;"><i class="fas fa-check"></i> Complete</span>`;
+                } else if (item.status === 'Pending') {
+                    statusBadge = `<span class="badge badge-pending">Pending Approval</span>`;
+                    actionBtn = `<button class="btn-action btn-verify" style="background:#10b981; color:white;" onclick="approveItem(${item.id})">Approve Report</button>`;
+                } else if (item.is_verified) {
+                    statusBadge = `<span class="badge badge-office">Office Inventory</span>`;
+                    actionBtn = `<button class="btn-action btn-primary" onclick="markAsClaimed(${item.id})">Mark Returned</button>`;
+                } else {
+                    statusBadge = `<span class="badge badge-custody">Student Custody</span>`;
+                    actionBtn = `<button class="btn-action btn-verify" onclick="verifyAndMove(${item.id})">Intake Item</button>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <div class="item-info">
+                                ${item.image ? `<img src="/uploads/${item.image}" class="item-img">` : `<div class="item-img" style="display:flex; align-items:center; justify-content:center; color:#ccc;"><i class="fas fa-image"></i></div>`}
+                                <div><div style="font-weight:700;">${item.item_name}</div><div style="font-size:0.7rem; color:var(--text-muted);">#ID-${item.id}</div></div>
+                            </div>
+                        </td>
+                        <td>${item.category}</td>
+                        <td><span style="color:var(--text-muted);"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>${item.location}</span></td>
+                        <td>${item.reported_at.split(' ')[0]}</td>
+                        <td>${statusBadge}</td>
+                        <td><div style="display:flex; gap:10px; align-items:center;">${actionBtn}<button class="btn-action btn-archive" onclick="confirmDelete(${item.id})"><i class="fas fa-trash-alt"></i></button></div></td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function approveItem(id) {
+            const fd = new FormData(); fd.append('token', token);
+            const res = await fetch(`/admin/approve-item/found/${id}`, { method: 'POST', body: fd });
+            if ((await res.json()).success) { Swal.fire('Approved', 'Item is now visible.', 'success'); loadItems(); }
+        }
+
+        async function verifyAndMove(id) {
+            Swal.fire({ title: 'Accept Item Intake?', text: "Confirm student surrender to official inventory.", icon: 'question', showCancelButton: true, confirmButtonColor: '#800000', confirmButtonText: 'Confirm' }).then(async (r) => {
+                if (r.isConfirmed) {
+                    const fd = new FormData(); fd.append('token', token); fd.append('item_id', id); fd.append('found_in', 'University Office (Verified)');
+                    const res = await fetch('/admin/move-to-found', { method: 'POST', body: fd });
+                    if ((await res.json()).success) { Swal.fire('Updated', 'Item secured in office.', 'success'); loadItems(); }
+                }
+            });
+        }
+
+        async function markAsClaimed(id) {
+            Swal.fire({ title: 'Mark as Returned?', text: "Verify this item has been picked up.", icon: 'question', showCancelButton: true, confirmButtonColor: '#800000', confirmButtonText: 'Yes, Return' }).then(async (r) => {
+                if (r.isConfirmed) {
+                    const fd = new FormData(); fd.append('token', token); fd.append('item_id', id);
+                    const res = await fetch('/admin/mark-claimed', { method: 'POST', body: fd });
+                    if ((await res.json()).success) { Swal.fire('Success', 'Inventory updated.', 'success'); loadItems(); }
+                }
+            });
+        }
+
+        function confirmDelete(id) {
+            Swal.fire({ title: 'Archive Record?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#800000', confirmButtonText: 'Archive' }).then(async (r) => {
+                if (r.isConfirmed) {
+                    const res = await fetch(`/admin/delete/${id}?token=${token}&table=found`, { method: 'DELETE' });
+                    if (res.ok) { Swal.fire('Archived', 'Record hidden.', 'success'); loadItems(); }
+                }
+            });
+        }
+
+        function handleLogout() { Swal.fire({ title: 'Log Out?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#800000', confirmButtonText: 'Exit' }).then((r) => { if (r.isConfirmed) window.location.href = "/logout"; }); }
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        window.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+            if (window.innerWidth <= 768 && sidebar && toggle &&
+                !sidebar.contains(e.target) && !toggle.contains(e.target) && 
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        document.getElementById('searchBar').addEventListener('input', applyFilters);
+        document.getElementById('filterStatus').addEventListener('change', applyFilters);
+        document.addEventListener("DOMContentLoaded", loadItems);
+    </script>
+</body>
+</html>

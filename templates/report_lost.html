@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Report Item | TrackBox EVSU</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #800000;
+            --primary-dark: #5e0000;
+            --accent: #FFCC00;
+            --bg: #f4f7f6;
+            --white: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #6b7280;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text-main); display: flex; min-height: 100vh; }
+
+        /* --- SIDEBAR --- */
+        .sidebar { width: 280px; background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%); color: var(--white); position: fixed; height: 100vh; display: flex; flex-direction: column; z-index: 1000; box-shadow: 10px 0 30px rgba(128, 0, 0, 0.1); }
+        .sidebar-brand { padding: 30px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar-brand img { height: 40px; }
+        .sidebar-brand span { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
+        .sidebar nav { padding: 30px 0; flex-grow: 1; }
+        .sidebar nav a { display: flex; align-items: center; gap: 15px; padding: 16px 30px; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-weight: 500; transition: var(--transition); border-left: 4px solid transparent; }
+        .sidebar nav a i { font-size: 1.2rem; }
+        .sidebar nav a:hover { background: rgba(255, 255, 255, 0.05); color: var(--white); }
+        .sidebar nav a.active { color: var(--white); background: rgba(255, 255, 255, 0.08); border-left-color: var(--accent); }
+        .sidebar nav a.active i { color: var(--accent); }
+
+        /* --- TOPBAR --- */
+        .topbar { position: fixed; top: 0; left: 280px; right: 0; height: 80px; background: var(--white); display: flex; justify-content: space-between; align-items: center; padding: 0 40px; z-index: 900; box-shadow: 0 2px 15px rgba(0,0,0,0.03); }
+        .topbar-left h2 { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
+
+        /* --- MAIN CONTENT --- */
+        .main { flex: 1; margin-left: 280px; padding: 120px 40px 40px 40px; display: flex; justify-content: center; }
+
+        .form-card {
+            background: var(--white);
+            width: 100%;
+            max-width: 650px;
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: var(--shadow);
+            border: 1px solid #f0f0f0;
+        }
+
+        .form-card h1 { font-size: 2rem; font-weight: 800; color: var(--primary); text-align: center; margin-bottom: 10px; }
+        .form-card p.subtitle { color: var(--text-muted); text-align: center; margin-bottom: 40px; font-size: 0.95rem; }
+
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: 1px solid #e5e7eb;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            background: #f9fafb;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--white);
+            box-shadow: 0 0 0 4px rgba(128,0,0,0.05);
+        }
+
+        textarea.form-control { resize: none; }
+
+        .file-upload-wrapper {
+            position: relative;
+            padding: 20px;
+            border: 2px dashed #e5e7eb;
+            border-radius: 14px;
+            text-align: center;
+            background: #f9fafb;
+            transition: var(--transition);
+        }
+
+        .file-upload-wrapper:hover { border-color: var(--primary); background: #fdf2f2; }
+        .file-upload-wrapper input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .file-upload-wrapper i { font-size: 1.5rem; color: var(--primary); margin-bottom: 10px; display: block; }
+        .file-upload-wrapper span { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+
+        .security-box {
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .security-box h4 { color: #92400e; display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-weight: 700; }
+        .security-box p { font-size: 0.8rem; color: #b45309; margin-bottom: 20px; }
+
+        .btn-submit {
+            width: 100%;
+            padding: 18px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 10px 20px rgba(128,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .btn-submit:hover { background: var(--primary-dark); transform: translateY(-3px); }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 85px; }
+            .sidebar-brand span, .sidebar nav a span { display: none; }
+            .sidebar-brand { justify-content: center; padding: 20px; }
+            .sidebar nav a { justify-content: center; padding: 20px; }
+            .topbar, .main { left: 85px; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -280px; width: 280px; transition: transform 0.3s ease; }
+            .sidebar.active { transform: translateX(280px); left: 0; }
+            .sidebar-brand span, .sidebar nav a span { display: flex; }
+            .topbar, .main { left: 0; }
+            .topbar { padding: 0 20px; }
+            .menu-toggle { display: block; }
+            .main { padding: 100px 20px 40px 20px; }
+            .form-card { padding: 30px 20px; border-radius: 20px; }
+            .form-card h1 { font-size: 1.6rem; }
+            .btn-submit { padding: 15px; font-size: 1rem; }
+        }
+        .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: var(--primary); cursor: pointer; }
+        .topbar { transition: var(--transition); }
+        .topbar-left { display: flex; align-items: center; gap: 15px; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="/static/EVSU_logo.png" alt="EVSU">
+            <span>TrackBox</span>
+        </div>
+        <nav>
+            <a href="/student/dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
+            <a href="/user_account"><i class="fas fa-user-circle"></i><span>My Account</span></a>
+            <a href="/report_lost" class="active"><i class="fas fa-plus-square"></i><span>Report Item</span></a>
+            <a href="/search_lost"><i class="fas fa-search"></i><span>Search Items</span></a>
+        </nav>
+    </aside>
+
+    <header class="topbar">
+        <div class="topbar-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2>Report New Item</h2>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="form-card">
+            <h1>Submit Report</h1>
+            <p class="subtitle">Provide detailed information to help identify the item</p>
+
+            <form method="post" enctype="multipart/form-data">
+                <input type="hidden" name="token" value="{{ token }}">
+
+                <div class="form-group">
+                    <label>What happened?</label>
+                    <select name="type" class="form-control" required onchange="toggleSecurity(this.value)">
+                        <option value="">Select report type...</option>
+                        <option value="LOST">I lost an item</option>
+                        <option value="FOUND">I found an item</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Category</label>
+                    <select name="category" class="form-control" required>
+                        <option value="">Select category...</option>
+                        <option>Electronics</option>
+                        <option>Bags & Wallets</option>
+                        <option>Keys & ID Cards</option>
+                        <option>Clothing</option>
+                        <option>Books & Study Material</option>
+                        <option>Others</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" name="item_name" class="form-control" placeholder="e.g. Silver Laptop, Brown Wallet" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Identify marks, brands, or unique features..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Building / Department</label>
+                    <select id="buildingSelect" name="building" class="form-control" required>
+                        <option value="">Loading buildings...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Specific Location (Room/Area) <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 400;">(Optional)</span></label>
+                    <input type="text" name="last_seen" class="form-control" placeholder="e.g. Room 204, Lobby">
+                </div>
+
+                <div class="form-group">
+                    <label id="image-label">Photo Reference <span style="color:var(--primary)">*</span></label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="file-upload-wrapper">
+                            <i class="fas fa-upload"></i>
+                            <span>Upload File</span>
+                            <input type="file" id="image-input" name="image" accept="image/*" onchange="previewFile(this)" required>
+                        </div>
+                        <button type="button" onclick="openCamera()" class="file-upload-wrapper" style="width: 100%; cursor: pointer;">
+                            <i class="fas fa-camera"></i>
+                            <span>Capture Photo</span>
+                        </button>
+                    </div>
+                    <div id="image-preview" style="margin-top: 15px; display: none; text-align: center;">
+                        <img id="preview-img" style="max-width: 100%; border-radius: 12px; height: 150px; object-fit: cover;">
+                        <p style="font-size: 0.8rem; color: var(--primary); font-weight: 600; margin-top: 5px;">Photo Selected ✓</p>
+                    </div>
+                </div>
+
+                <div id="security-section" class="security-box">
+                    <h4><i class="fas fa-lock"></i> Ownership Verification</h4>
+                    <p>Provide a question that only the true owner could answer.</p>
+                    <div class="form-group">
+                        <label>Security Question</label>
+                        <input type="text" name="security_question" class="form-control" placeholder="e.g. What is the wallpaper?">
+                    </div>
+                    <div class="form-group">
+                        <label>Security Answer</label>
+                        <input type="text" name="security_answer" class="form-control" placeholder="e.g. A photo of a cat">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-paper-plane"></i>
+                    Submit to TrackBox
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <div id="status-messages" data-success="{{ success }}" data-error="{{ error }}"></div>
+
+    <!-- CAMERA MODAL -->
+    <div id="cameraModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+        <video id="video" style="width: 100%; max-width: 500px; border-radius: 20px; background: #000;" autoplay playsinline></video>
+        <div style="margin-top: 20px; display: flex; gap: 20px;">
+            <button onclick="capturePhoto()" style="background: var(--accent); color: var(--primary); border: none; padding: 15px 30px; border-radius: 100px; font-weight: 800; cursor: pointer;">CAPTURE</button>
+            <button onclick="closeCamera()" style="background: white; color: black; border: none; padding: 15px 30px; border-radius: 100px; font-weight: 800; cursor: pointer;">CANCEL</button>
+        </div>
+        <canvas id="canvas" style="display: none;"></canvas>
+    </div>
+
+    <script>
+        async function loadBuildings() {
+            const res = await fetch('/api/buildings');
+            const data = await res.json();
+            const select = document.getElementById('buildingSelect');
+            select.innerHTML = '<option value="">Select building...</option>' + 
+                data.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+        }
+        loadBuildings();
+
+        function previewFile(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById('preview-img').src = e.target.result;
+                    document.getElementById('image-preview').style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        let stream = null;
+        async function openCamera() {
+            document.getElementById('cameraModal').style.display = 'flex';
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            document.getElementById('video').srcObject = stream;
+        }
+
+        function closeCamera() {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+            document.getElementById('cameraModal').style.display = 'none';
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            canvas.toBlob(blob => {
+                const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
+                const container = new DataTransfer();
+                container.items.add(file);
+                document.getElementById('image-input').files = container.files;
+                
+                document.getElementById('preview-img').src = canvas.toDataURL('image/jpeg');
+                document.getElementById('image-preview').style.display = 'block';
+                closeCamera();
+            }, 'image/jpeg');
+        }
+
+        function toggleSecurity(val) {
+            const section = document.getElementById('security-section');
+            const imageInput = document.getElementById('image-input');
+            const imageLabel = document.getElementById('image-label');
+
+            section.style.display = 'none';
+
+            // Photo is now REQUIRED for both LOST and FOUND for better identification
+            imageInput.required = true;
+            imageLabel.innerHTML = 'Photo Reference <span style="color:var(--primary)">*</span>';
+
+            if (val === 'FOUND') {
+                // Additional logic for found items if needed
+            } else {
+                // Additional logic for lost items if needed
+            }
+        }
+
+        const statusEl = document.getElementById('status-messages');
+        const successMsg = statusEl.dataset.success;
+        const errorMsg = statusEl.dataset.error;
+
+        if (successMsg && successMsg !== 'None' && successMsg !== '') {
+            Swal.fire({ icon: 'success', title: 'Success!', text: successMsg, confirmButtonColor: '#800000' });
+        }
+        if (errorMsg && errorMsg !== 'None' && errorMsg !== '') {
+            Swal.fire({ icon: 'error', title: 'Oops...', text: errorMsg, confirmButtonColor: '#800000' });
+        }
+    </script>
+</body>
+</html>

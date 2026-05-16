@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Account | TrackBox EVSU</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+        :root {
+            --primary: #800000;
+            --primary-dark: #5e0000;
+            --accent: #FFCC00;
+            --bg: #f4f7f6;
+            --white: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #6b7280;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text-main); display: flex; min-height: 100vh; }
+
+        /* --- SIDEBAR --- */
+        .sidebar { width: 280px; background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%); color: var(--white); position: fixed; height: 100vh; display: flex; flex-direction: column; z-index: 1000; box-shadow: 10px 0 30px rgba(128, 0, 0, 0.1); }
+        .sidebar-brand { padding: 30px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar-brand img { height: 40px; }
+        .sidebar-brand span { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
+        .sidebar nav { padding: 30px 0; flex-grow: 1; }
+        .sidebar nav a { display: flex; align-items: center; gap: 15px; padding: 16px 30px; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-weight: 500; transition: var(--transition); border-left: 4px solid transparent; }
+        .sidebar nav a i { font-size: 1.2rem; }
+        .sidebar nav a:hover { background: rgba(255, 255, 255, 0.05); color: var(--white); }
+        .sidebar nav a.active { color: var(--white); background: rgba(255, 255, 255, 0.08); border-left-color: var(--accent); }
+        .sidebar nav a.active i { color: var(--accent); }
+
+        /* --- TOPBAR --- */
+        .topbar { position: fixed; top: 0; left: 280px; right: 0; height: 80px; background: var(--white); display: flex; justify-content: space-between; align-items: center; padding: 0 40px; z-index: 900; box-shadow: 0 2px 15px rgba(0,0,0,0.03); transition: var(--transition); }
+        .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: var(--primary); cursor: pointer; }
+        .topbar-left { display: flex; align-items: center; gap: 15px; }
+        .topbar-left h2 { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
+        .topbar-right { display: flex; align-items: center; gap: 20px; }
+        .btn-back { color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; transition: var(--transition); }
+        .btn-back:hover { color: var(--primary); }
+
+        /* --- MAIN CONTENT --- */
+        .main { flex: 1; margin-left: 280px; padding: 120px 40px 40px 40px; }
+
+        /* --- PROFILE CARD --- */
+        .profile-hero {
+            background: var(--white);
+            border-radius: 30px;
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #f0f0f0;
+        }
+        .profile-hero::before {
+            content: ''; position: absolute; top: 0; right: 0; width: 300px; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(128, 0, 0, 0.02));
+            pointer-events: none;
+        }
+        .profile-image-wrapper { position: relative; width: 140px; height: 140px; }
+        .profile-image { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 5px solid #f8f9fa; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .upload-badge { position: absolute; bottom: 5px; right: 5px; width: 40px; height: 40px; background: var(--primary); color: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid var(--white); box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: var(--transition); }
+        .upload-badge:hover { transform: scale(1.1); background: var(--primary-dark); }
+        
+        .profile-info h1 { font-size: 2.2rem; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
+        .profile-info p { color: var(--text-muted); font-size: 1rem; margin-bottom: 15px; }
+        .points-pill { display: inline-flex; align-items: center; gap: 8px; background: #fffbeb; color: #92400e; padding: 8px 16px; border-radius: 100px; font-weight: 700; font-size: 0.9rem; border: 1px solid #fef3c7; }
+
+        /* --- SETTINGS GRID --- */
+        .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; }
+        .card { background: var(--white); border-radius: 24px; padding: 30px; box-shadow: var(--shadow); border: 1px solid #f0f0f0; }
+        .card h3 { font-size: 1.2rem; font-weight: 800; color: var(--primary); margin-bottom: 25px; display: flex; align-items: center; gap: 12px; }
+        .card h3 i { color: var(--accent); }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #e5e7eb; font-family: inherit; font-size: 0.95rem; transition: var(--transition); background: #f9fafb; }
+        .form-group input:focus { outline: none; border-color: var(--primary); background: var(--white); box-shadow: 0 0 0 4px rgba(128,0,0,0.05); }
+
+        .btn-submit { width: 100%; padding: 15px; background: var(--primary); color: var(--white); border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: var(--transition); box-shadow: 0 4px 15px rgba(128,0,0,0.2); }
+        .btn-submit:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+        /* --- REPORTS LIST --- */
+        .reports-list { display: flex; flex-direction: column; gap: 15px; }
+        .report-item { background: #f9fafb; padding: 20px; border-radius: 16px; border: 1px solid #f1f5f9; transition: var(--transition); }
+        .report-item:hover { transform: translateX(5px); border-color: var(--primary); background: var(--white); box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
+        
+        .report-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .report-title { font-weight: 700; font-size: 1rem; display: block; margin-bottom: 5px; }
+        .badge-container { display: flex; gap: 8px; flex-wrap: wrap; }
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+        .badge-lost { background: #fee2e2; color: #991b1b; }
+        .badge-found { background: #dcfce7; color: #166534; }
+        .badge-potential { background: #e0f2fe; color: #0369a1; }
+
+        .report-actions { display: flex; gap: 8px; margin-top: 15px; }
+        .btn-small { padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-decoration: none; border: none; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 6px; }
+        .btn-edit { background: #f3f4f6; color: #4b5563; }
+        .btn-qr { background: var(--primary); color: white; }
+        .btn-delete { background: #fee2e2; color: #ef4444; }
+        .btn-chat { background: var(--primary); color: white; }
+        .btn-handover { background: #059669; color: white; width: 100%; justify-content: center; }
+
+        /* --- MODALS --- */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-box { background: white; border-radius: 30px; padding: 40px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+
+        /* ---- GA-STYLE FULLSCREEN HANDOVER SCANNER ---- */
+        #handover-modal {
+            position: fixed !important; inset: 0 !important; z-index: 3000 !important;
+            background: #000 !important; display: none;
+            align-items: unset !important; justify-content: unset !important;
+        }
+        .hw-topbar {
+            position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+            padding: 50px 20px 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .hw-title { color: white; font-size: 1.05rem; font-weight: 700; }
+        .hw-close-btn {
+            background: rgba(255,255,255,0.2); border: none; color: white;
+            width: 42px; height: 42px; border-radius: 50%; font-size: 1.2rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px); transition: background 0.2s;
+        }
+        .hw-close-btn:hover { background: rgba(255,255,255,0.35); }
+        #hw-video {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        .hw-overlay {
+            position: absolute; inset: 0; z-index: 15; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .hw-cutout {
+            position: relative; width: 260px; height: 260px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+            border-radius: 16px;
+        }
+        .hw-cutout::before, .hw-cutout::after,
+        .hw-corner-br, .hw-corner-bl {
+            content: ''; position: absolute;
+            width: 36px; height: 36px;
+            border-color: #4ade80; border-style: solid;
+        }
+        .hw-cutout::before { top:-3px; left:-3px; border-width:4px 0 0 4px; border-radius:12px 0 0 0; }
+        .hw-cutout::after  { top:-3px; right:-3px; border-width:4px 4px 0 0; border-radius:0 12px 0 0; }
+        .hw-corner-br { bottom:-3px; right:-3px; border-width:0 4px 4px 0; border-radius:0 0 12px 0; }
+        .hw-corner-bl { bottom:-3px; left:-3px;  border-width:0 0 4px 4px; border-radius:0 0 0 12px; }
+        .hw-scan-line {
+            position: absolute; left: 4px; right: 4px; height: 3px;
+            background: linear-gradient(to right, transparent, #4ade80, #86efac, #4ade80, transparent);
+            border-radius: 4px;
+            box-shadow: 0 0 12px 3px rgba(74,222,128,0.6);
+            animation: hwScan 2s linear infinite; top: 0;
+        }
+        @keyframes hwScan {
+            0%   { top: 6px; opacity: 1; }
+            50%  { top: calc(100% - 9px); opacity: 0.8; }
+            51%  { opacity: 0; top: calc(100% - 9px); }
+            52%  { opacity: 0; top: 6px; }
+            53%  { opacity: 1; }
+            100% { top: calc(100% - 9px); opacity: 1; }
+        }
+        .hw-hint {
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 16;
+            padding: 20px 20px 50px;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            text-align: center;
+            color: rgba(255,255,255,0.85); font-size: 0.9rem; font-weight: 500;
+        }
+        .hw-hint span { display: block; margin-top: 6px; font-size: 0.75rem; opacity: 0.6; }
+
+        /* WhatsApp Inspired Chat Modal */
+        #chat-modal .modal-box { padding: 0; height: 600px; max-height: 90vh; background: #e5ddd5; display: flex; flex-direction: column; }
+        .chat-header { padding: 15px 20px; background: #075e54; color: white; display: flex; align-items: center; gap: 15px; }
+        .chat-header img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .chat-body { flex: 1; padding: 20px; overflow-y: auto; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); display: flex; flex-direction: column; gap: 10px; }
+        .message { max-width: 80%; padding: 10px 15px; border-radius: 12px; font-size: 0.9rem; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .msg-sent { background: #dcf8c6; align-self: flex-end; border-top-right-radius: 2px; }
+        .msg-received { background: white; align-self: flex-start; border-top-left-radius: 2px; }
+        .msg-time { font-size: 0.65rem; color: #888; display: block; text-align: right; margin-top: 5px; }
+        .chat-footer { padding: 15px; background: #f0f0f0; display: flex; gap: 10px; }
+        .chat-input { flex: 1; padding: 12px 20px; border-radius: 30px; border: none; outline: none; }
+        .btn-send { width: 45px; height: 45px; border-radius: 50%; background: #128c7e; color: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+        /* Professional Zoom Overlay */
+        .zoom-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .zoom-overlay.active { display: flex; opacity: 1; }
+        .zoom-overlay img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .zoom-overlay.active img { transform: scale(1); }
+        .zoom-close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+        .zoom-close:hover { background: rgba(255,255,255,0.2); transform: rotate(90deg); }
+
+        @media (max-width: 1024px) { .sidebar { width: 80px; } .sidebar-brand span, .sidebar nav a span { display: none; } .topbar, .main { left: 80px; } }
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .sidebar { width: 85px; }
+            .sidebar-brand span, .sidebar nav a span { display: none; }
+            .sidebar-brand { justify-content: center; padding: 20px; }
+            .sidebar nav a { justify-content: center; padding: 20px; }
+            .topbar, .main { left: 85px; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -280px; width: 280px; transition: transform 0.3s ease; }
+            .sidebar.active { transform: translateX(280px); left: 0; }
+            .sidebar-brand span, .sidebar nav a span { display: flex; }
+            .topbar, .main { left: 0; }
+            .topbar { padding: 0 20px; }
+            .menu-toggle { display: block; }
+            .main { padding: 100px 20px 40px 20px; }
+            .profile-hero { flex-direction: column; text-align: center; gap: 20px; padding: 30px; }
+            .settings-grid { grid-template-columns: 1fr; }
+            .report-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .modal-box { padding: 25px; width: 90%; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="/static/EVSU_logo.png" alt="EVSU">
+            <span>TrackBox</span>
+        </div>
+        <nav>
+            <a href="/student/dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
+            <a href="/user_account" class="active"><i class="fas fa-user-circle"></i><span>My Account</span></a>
+            <a href="/report_lost"><i class="fas fa-plus-square"></i><span>Report Item</span></a>
+            <a href="/search_lost"><i class="fas fa-search"></i><span>Search Items</span></a>
+        </nav>
+    </aside>
+
+    <header class="topbar">
+        <div class="topbar-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2>Account Management</h2>
+        </div>
+        <div class="topbar-right">
+            <a href="/student/dashboard" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="profile-hero">
+            <div class="profile-image-wrapper">
+                <img src="{% if user.profile_image %}/uploads/{{ user.profile_image }}{% else %}https://ui-avatars.com/api/?name={{ user.first_name }}+{{ user.last_name }}&background=800000&color=fff&size=200{% endif %}" alt="Profile" class="profile-image" id="current-profile-img">
+                <label for="profile-upload" class="upload-badge"><i class="fas fa-camera"></i></label>
+                <form id="image-upload-form" action="/user/upload_profile_image" method="post" enctype="multipart/form-data">
+                    <input type="file" name="profile_image" id="profile-upload" onchange="this.form.submit()" style="display:none">
+                </form>
+            </div>
+            <div class="profile-info">
+                <h1>{{ user.first_name }} {{ user.last_name }}</h1>
+                <p><i class="fas fa-envelope" style="margin-right:8px;"></i> {{ user.email }} • Student Member</p>
+                <div class="points-pill"><i class="fas fa-award"></i> {{ user.points }} Achievement Points</div>
+                <button onclick="showMyQR()" class="btn-submit" style="margin-top: 15px; width: auto; padding: 10px 25px; font-size: 0.9rem; background: var(--accent); color: var(--primary);">
+                    <i class="fas fa-qrcode"></i> Show My ID QR
+                </button>
+            </div>
+        </div>
+
+        <div class="settings-grid">
+            <div class="card">
+                <h3><i class="fas fa-shield-alt"></i> Security Settings</h3>
+                <form method="post" action="/user_account/change-password">
+                    <div class="form-group"><label>Current Password</label><input type="password" name="current_password" required></div>
+                    <div class="form-group"><label>New Password</label><input type="password" name="new_password" required></div>
+                    <div class="form-group"><label>Confirm New Password</label><input type="password" name="confirm_password" required></div>
+                    <button type="submit" class="btn-submit">Update Security Credentials</button>
+                </form>
+            </div>
+
+            <div class="card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                <h3><i class="fas fa-address-card"></i> My Identity QR</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Use this QR for quick identity verification with Security Guards.</p>
+                
+                <div id="id-qr-container" style="background: #f9fafb; padding: 15px; border-radius: 20px; border: 2px dashed #e5e7eb; margin-bottom: 20px;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=USER|{{ user.username }}&ecc=H" alt="My ID QR" style="display: block; width: 180px; height: 180px;">
+                </div>
+                
+                <a href="/download_qr?data=USER|{{ user.username }}" class="btn-small" style="background: var(--primary); color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; font-weight: 700;">
+                    <i class="fas fa-download"></i> Download My QR
+                </a>
+            </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-history"></i> My Activity Hub</h3>
+                <div class="reports-list">
+                    {% if posts %}
+                    {% for post in posts %}
+                    <div class="report-item">
+                        <div class="report-header">
+                            <div>
+                                <span class="report-title">{{ post.title }}</span>
+                                <div class="badge-container">
+                                    <span class="badge badge-{{ post.type|lower }}">{{ post.type }}</span>
+                                    <span class="badge" style="background:#f3f4f6; color:#4b5563;">{{ post.status }}</span>
+                                    {% if post.matched_with and not post.is_claimed %}
+                                    <span class="badge badge-potential">Match Found!</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if post.type|upper == 'LOST' and not post.is_claimed %}
+                            <a href="/claim_qr?item_id={{ post.id }}&username={{ user.username }}" target="_blank" class="btn-small btn-qr"><i class="fas fa-qrcode"></i> QR</a>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="report-actions">
+                            {% if post.matched_with and not post.is_claimed %}
+                                {% if post.is_owner_verified %}
+                                <button onclick="openChat('{{ post.chat_id }}', '{{ post.matched_user }}')" class="btn-small btn-chat"><i class="fas fa-comments"></i> Chat</button>
+                                {% endif %}
+                                
+                                {% if post.type|upper == 'LOST' %}
+                                <button onclick='viewItemDetails({{ post.match_details | tojson | safe }}, {{ post.id }})' class="btn-small btn-edit" style="background:#e0f2fe; color:#0369a1;"><i class="fas fa-eye"></i> View Match</button>
+                                {% endif %}
+                            {% endif %}
+                            
+                            {% if not post.is_claimed %}
+                            <a href="/edit_report/{{ post.id }}" class="btn-small btn-edit"><i class="fas fa-edit"></i> Edit</a>
+                            {% endif %}
+                            
+                            <button type="button" class="btn-small btn-delete" onclick="confirmDelete('{{ post.id }}')"><i class="fas fa-trash"></i></button>
+                        </div>
+
+                        {% if post.type|upper == 'FOUND' and not post.is_claimed %}
+                        <button type="button" class="btn-small btn-handover" onclick="openHandoverScanner('{{ post.id }}')" style="margin-top:10px;">
+                            <i class="fas fa-handshake"></i> Complete Handover
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                        <i class="fas fa-folder-open" style="font-size:2rem; display:block; margin-bottom:10px;"></i>
+                        No reports found.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODALS (Simplified for redesign) -->
+    <!-- VIEW MATCH MODAL -->
+    <div id="match-modal" class="modal">
+        <div class="modal-box" style="max-width: 600px;">
+            <h3><i class="fas fa-eye"></i> Matched Item Details</h3>
+            <div id="match-content" style="margin-top:20px;">
+                <img id="match-img" src="" onclick="zoomImage(this.src)" style="width:100%; height:250px; object-fit:cover; border-radius:15px; margin-bottom:20px; display:none; cursor:zoom-in;" title="Click to zoom">
+                <div style="background:#f8fafc; padding:20px; border-radius:15px;">
+                    <h4 id="match-name" style="margin-bottom:10px; color:var(--primary);"></h4>
+                    <p id="match-desc" style="font-size:0.9rem; color:var(--text-muted); line-height:1.6;"></p>
+                    <div style="margin-top:15px; font-size:0.8rem; font-weight:700; color:var(--primary);">
+                        <i class="fas fa-map-marker-alt"></i> <span id="match-loc"></span>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="confirm-match-btn" onclick="confirmMyItem()" class="btn-submit" style="background: var(--success); flex: 2;">
+                    <i class="fas fa-check-circle"></i> This is my Item!
+                </button>
+                <button onclick="closeMatchModal()" class="btn-submit" style="background: #6b7280; flex: 1;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHAT MODAL -->
+    <div id="chat-modal" class="modal">
+        <div class="modal-box">
+            <div class="chat-header">
+                <img id="chat-user-img" src="https://ui-avatars.com/api/?background=fff&color=800000" alt="">
+                <div style="flex:1">
+                    <div id="chat-user-name" style="font-weight:700; font-size:1rem;">Finder</div>
+                    <div style="font-size:0.7rem; opacity:0.8;">Online</div>
+                </div>
+                <button onclick="closeChat()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div class="chat-body" id="chat-messages">
+                <!-- Messages go here -->
+                <div style="text-align:center; margin-top:50px; color:#888;">
+                    <i class="fas fa-lock" style="font-size:0.7rem;"></i> End-to-end encrypted
+                </div>
+            </div>
+            <div class="chat-footer">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Type a message...">
+                <button onclick="sendMessage()" class="btn-send"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GA-STYLE FULLSCREEN HANDOVER SCANNER -->
+    <div id="handover-modal">
+        <!-- Top Bar -->
+        <div class="hw-topbar">
+            <span class="hw-title"><i class="fas fa-handshake" style="color:#4ade80;margin-right:8px;"></i>Scan Owner's QR Code</span>
+            <button class="hw-close-btn" onclick="closeHandoverScanner()"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- Raw camera feed -->
+        <video id="hw-video" autoplay playsinline muted></video>
+        <!-- Hidden canvas for jsQR -->
+        <canvas id="hw-canvas" style="display:none;"></canvas>
+
+        <!-- Viewfinder overlay -->
+        <div class="hw-overlay">
+            <div class="hw-cutout" id="hw-cutout">
+                <div class="hw-scan-line"></div>
+                <div class="hw-corner-br"></div>
+                <div class="hw-corner-bl"></div>
+            </div>
+        </div>
+
+        <!-- Bottom hint -->
+        <div class="hw-hint">
+            Point at the owner's verification QR code
+            <span>Keep QR inside the green frame &mdash; scans automatically</span>
+        </div>
+    </div>
+
+    <!-- IDENTITY QR MODAL -->
+    <div id="id-qr-modal" class="modal">
+        <div class="modal-box" style="max-width: 400px; text-align: center;">
+            <h3 style="color: var(--primary); margin-bottom: 10px;">My Identity QR</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px;">Show this to security guards kapag mag-turn in ng items.</p>
+            
+            <div style="background: white; padding: 20px; border-radius: 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); display: inline-block; margin-bottom: 25px;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=USER|{{ user.username }}&ecc=M" alt="My ID QR" style="width: 250px; height: 250px; display: block;">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <a href="/download_qr?data=USER|{{ user.username }}" class="btn-submit" style="flex: 1; background: var(--accent); color: var(--primary); text-decoration: none; font-size: 0.9rem;">
+                    <i class="fas fa-download"></i> Save to Gallery
+                </a>
+                <button onclick="closeMyQR()" class="btn-submit" style="flex: 1; background: #6b7280; font-size: 0.9rem;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Close sidebar when clicking outside on mobile
+        window.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !toggle.contains(e.target) && 
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        let currentChatId = null;
+        let activeHandoverItemId = null;
+        let socket = null;
+        const currentUsername = "{{ user.username }}";
+
+        function openChat(chatId, matchedUser) {
+            currentChatId = chatId;
+            document.getElementById('chat-user-name').innerText = matchedUser;
+            document.getElementById('chat-user-img').src = `https://ui-avatars.com/api/?name=${matchedUser}&background=fff&color=800000`;
+            document.getElementById('chat-modal').style.display = 'flex';
+            document.getElementById('chat-messages').innerHTML = ''; // Clear previous
+
+            // Initialize WebSocket
+            if (socket) socket.close();
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            socket = new WebSocket(`${protocol}//${window.location.host}/ws/${currentUsername}`);
+            
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.chat_id == currentChatId) {
+                    appendMessage(data.sender, data.text, data.time);
+                }
+            };
+        }
+
+        function closeChat() {
+            document.getElementById('chat-modal').style.display = 'none';
+            if (socket) socket.close();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (text && socket) {
+                const msg = {
+                    chat_id: currentChatId,
+                    sender: currentUsername,
+                    receiver: document.getElementById('chat-user-name').innerText,
+                    text: text,
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+                socket.send(JSON.stringify(msg));
+                appendMessage(currentUsername, text, msg.time);
+                input.value = '';
+            }
+        }
+
+        function appendMessage(sender, text, time) {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `message ${sender === currentUsername ? 'msg-sent' : 'msg-received'}`;
+            div.innerHTML = `${text}<span class="msg-time">${time}</span>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        let currentMatchItemId = null;
+        function viewItemDetails(details, itemId) {
+            if (!details) return;
+            currentMatchItemId = itemId;
+            document.getElementById('match-name').innerText = details.item_name;
+            document.getElementById('match-desc').innerText = details.description;
+            document.getElementById('match-loc').innerText = details.location || 'Unknown';
+            
+            const img = document.getElementById('match-img');
+            if (details.image) {
+                img.src = '/uploads/' + details.image;
+                img.style.display = 'block';
+            } else {
+                img.style.display = 'none';
+            }
+            document.getElementById('match-modal').style.display = 'flex';
+        }
+
+        async function confirmMyItem() {
+            closeMatchModal(); // Close the preview modal first so it doesn't block the prompt
+            const result = await Swal.fire({
+                title: 'Confirm Item?',
+                text: "Are you sure this is your item? This will enable the chat feature with the finder.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                confirmButtonText: 'Yes, confirm it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch('/api/confirm-match', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `item_id=${currentMatchItemId}`
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        Swal.fire('Confirmed!', data.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('Error', 'Connection failed', 'error');
+                }
+            }
+        }
+
+        function closeMatchModal() {
+            document.getElementById('match-modal').style.display = 'none';
+        }
+
+        function zoomImage(src) {
+            const overlay = document.getElementById('zoom-overlay');
+            const img = document.getElementById('zoom-img');
+            img.src = src;
+            overlay.classList.add('active');
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeZoom() {
+            const overlay = document.getElementById('zoom-overlay');
+            overlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function handleLogout() {
+            Swal.fire({ title: 'Log Out?', text: "Are you sure?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#800000', confirmButtonText: 'Yes' }).then((r) => { if(r.isConfirmed) window.location.href = "/logout"; });
+        }
+        function confirmDelete(id) {
+            Swal.fire({ title: 'Delete?', text: "This cannot be undone!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Delete' }).then((r) => { if(r.isConfirmed) fetch(`/delete_report/${id}`, {method:'POST'}).then(()=>location.reload()); });
+        }
+        
+        // ===== NATIVE getUserMedia + jsQR — HANDOVER SCANNER =====
+        let hwStream = null;
+        let hwAnimFrame = null;
+        let hwActive = false;
+
+        async function openHandoverScanner(id) {
+            activeHandoverItemId = id;
+            document.getElementById('handover-modal').style.display = 'flex';
+            hwActive = true;
+
+            const video = document.getElementById('hw-video');
+            const constraints = { video: { facingMode: { ideal: 'environment' }, width: { min: 640, ideal: 1920, max: 1920 }, height: { min: 480, ideal: 1080, max: 1080 } } };
+
+            try {
+                hwStream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (e) {
+                try { hwStream = await navigator.mediaDevices.getUserMedia({ video: true }); }
+                catch (e2) {
+                    Swal.fire('Camera Error', 'Hindi ma-access ang camera. I-allow ang permissions sa browser.', 'error');
+                    closeHandoverScanner(); return;
+                }
+            }
+
+            video.srcObject = hwStream;
+            video.play();
+            video.addEventListener('loadedmetadata', startHWLoop, { once: true });
+        }
+
+        function startHWLoop() {
+            const video  = document.getElementById('hw-video');
+            const canvas = document.getElementById('hw-canvas');
+            const ctx    = canvas.getContext('2d', { willReadFrequently: true });
+
+            function tick() {
+                if (!hwActive) return;
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width  = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0);
+                    const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+                    if (code) {
+                        // Flash green
+                        const cutout = document.getElementById('hw-cutout');
+                        if (cutout) cutout.style.filter = 'brightness(2)';
+                        closeHandoverScanner();
+                        processHandover(code.data, activeHandoverItemId);
+                        return;
+                    }
+                }
+                hwAnimFrame = requestAnimationFrame(tick);
+            }
+            hwAnimFrame = requestAnimationFrame(tick);
+        }
+
+        function closeHandoverScanner() {
+            hwActive = false;
+            if (hwAnimFrame) { cancelAnimationFrame(hwAnimFrame); hwAnimFrame = null; }
+            if (hwStream)    { hwStream.getTracks().forEach(t => t.stop()); hwStream = null; }
+            const video = document.getElementById('hw-video');
+            if (video) video.srcObject = null;
+            document.getElementById('handover-modal').style.display = 'none';
+        }
+
+        function scanFromImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            // Decode QR from image file using jsQR
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width; canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                URL.revokeObjectURL(url);
+                if (code) { processHandover(code.data, activeHandoverItemId); }
+                else { Swal.fire('Error', 'No valid QR code found in that image.', 'error'); }
+            };
+            img.src = url;
+        }
+        async function processHandover(qrData, itemId) {
+            try {
+                const res = await fetch('/student/peer-verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `found_item_id=${itemId}&qr_data=${encodeURIComponent(qrData)}`
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire('Success', data.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'Connection failed', 'error');
+            }
+        } // Added missing closing brace for processHandover
+
+        function showMyQR() {
+            document.getElementById('id-qr-modal').style.display = 'flex';
+        }
+        function closeMyQR() {
+            document.getElementById('id-qr-modal').style.display = 'none';
+        }
+    </script>
+    <!-- FULLSCREEN ZOOM OVERLAY -->
+    <div id="zoom-overlay" class="zoom-overlay" onclick="closeZoom()">
+        <span class="zoom-close">&times;</span>
+        <img id="zoom-img" src="" alt="">
+    </div>
+</body>
+</html>

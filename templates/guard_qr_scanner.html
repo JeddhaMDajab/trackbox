@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Guard Verification | TrackBox EVSU</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+        :root {
+            --primary: #800000;
+            --primary-dark: #5e0000;
+            --accent: #FFCC00;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text-main); min-height: 100vh; }
+
+        nav {
+            background: var(--primary); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; color: var(--white);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 12px; font-weight: 800; }
+        .nav-brand img { height: 35px; }
+        .back-btn { background: rgba(255,255,255,0.1); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.85rem; transition: var(--transition); }
+        .back-btn:hover { background: var(--accent); color: var(--primary); }
+
+        .main { max-width: 800px; margin: 40px auto; padding: 0 20px; text-align: center; }
+        .header-box h1 { font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-bottom: 10px; }
+        .header-box p { color: var(--text-muted); margin-bottom: 30px; }
+
+        .scanner-card { background: var(--white); border-radius: 24px; box-shadow: var(--shadow); overflow: hidden; border: 1px solid rgba(0,0,0,0.03); margin-bottom: 30px; }
+
+        /* --- GOOGLE AUTH STYLE SCANNER --- */
+        .scan-view { padding: 0; position: relative; }
+        .scanner-frame {
+            position: relative; width: 100%; background: #000;
+            border-radius: 16px; overflow: hidden;
+            min-height: 400px;
+        }
+        #scanner { width: 100% !important; height: 100% !important; position: absolute; inset: 0; }
+        #scanner video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        #scanner img { display: none !important; }
+        #scanner__dashboard { display: none !important; }
+        #scanner__header_message { display: none !important; }
+        /* Viewfinder overlay */
+        .scan-overlay {
+            position: absolute; inset: 0; z-index: 5; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .scan-cutout {
+            position: relative; width: 220px; height: 220px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+            border-radius: 12px;
+        }
+        .scan-cutout::before, .scan-cutout::after,
+        .corner-br, .corner-bl {
+            content: ''; position: absolute;
+            width: 30px; height: 30px;
+            border-color: #4ade80; border-style: solid;
+        }
+        .scan-cutout::before { top: -3px; left: -3px; border-width: 4px 0 0 4px; border-radius: 10px 0 0 0; }
+        .scan-cutout::after  { top: -3px; right: -3px; border-width: 4px 4px 0 0; border-radius: 0 10px 0 0; }
+        .corner-br { bottom: -3px; right: -3px; border-width: 0 4px 4px 0; border-radius: 0 0 10px 0; }
+        .corner-bl { bottom: -3px; left: -3px;  border-width: 0 0 4px 4px; border-radius: 0 0 0 10px; }
+        .scan-line {
+            position: absolute; left: 4px; right: 4px; height: 3px;
+            background: linear-gradient(to right, transparent, #4ade80, #86efac, #4ade80, transparent);
+            border-radius: 4px;
+            box-shadow: 0 0 12px 3px rgba(74, 222, 128, 0.6);
+            animation: scanMove 2s linear infinite; top: 0;
+        }
+        @keyframes scanMove {
+            0%   { top: 6px; opacity: 1; }
+            50%  { top: calc(100% - 9px); opacity: 0.8; }
+            51%  { opacity: 0; top: calc(100% - 9px); }
+            52%  { opacity: 0; top: 6px; }
+            53%  { opacity: 1; }
+            100% { top: calc(100% - 9px); opacity: 1; }
+        }
+        .scan-hint {
+            background: rgba(0,0,0,0.7); color: rgba(255,255,255,0.85);
+            text-align: center; padding: 14px 20px; font-size: 0.85rem;
+            border-radius: 0 0 16px 16px;
+        }
+        .scan-hint small { display: block; opacity: 0.6; margin-top: 3px; font-size: 0.72rem; }
+
+        /* RESULTS */
+        .res-card { background: var(--white); border-radius: 24px; padding: 30px; box-shadow: var(--shadow); text-align: left; display: none; margin-top: 30px; border: 2px solid var(--accent); }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .info-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .info-value { font-weight: 600; }
+        
+        .security-box { grid-column: span 2; background: #fffbeb; padding: 15px; border-radius: 12px; border: 1px solid #fef3c7; }
+        .security-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-top: 10px; }
+        @media (max-width: 600px) {
+            nav { padding: 15px 20px; }
+            .nav-brand span { font-size: 0.9rem; }
+            .back-btn span { display: none; }
+            .back-btn i { margin: 0; }
+            .main { margin: 20px auto; }
+            .header-box h1 { font-size: 1.4rem; }
+            .info-grid { grid-template-columns: 1fr; }
+            .menu-toggle { display: block; background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; margin-right: 10px; }
+        }
+        .menu-toggle { display: none; }
+        
+        /* Mobile Nav Drawer */
+        .mobile-nav {
+            position: fixed; top: 0; left: -100%; width: 250px; height: 100vh; background: var(--primary);
+            z-index: 2001; transition: 0.3s ease; padding: 40px 20px; box-shadow: 10px 0 30px rgba(0,0,0,0.2);
+        }
+        .mobile-nav.active { left: 0; }
+        .mobile-nav a { display: block; color: white; text-decoration: none; padding: 15px 0; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-brand">
+            <button class="menu-toggle" onclick="toggleMobileNav()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <img src="/static/EVSU_logo.png" alt="EVSU">
+            <span>TrackBox | Verification Scanner</span>
+        </div>
+        <a href="/guard/dashboard" class="back-btn"><i class="fas fa-arrow-left"></i> <span>Back</span></a>
+    </nav>
+
+    <div class="mobile-nav" id="mobileNav">
+        <div style="margin-bottom: 30px; font-weight: 800; color: var(--accent);">GUARD MENU</div>
+        <a href="/guard/dashboard"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="/guard/qr-scanner"><i class="fas fa-qrcode"></i> QR Scanner</a>
+        <a href="/logout" style="color: #fca5a5;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <main class="main">
+        <div class="header-box">
+            <h1>Claim Verification</h1>
+            <p>Scan the owner's verification QR code to process item handover.</p>
+        </div>
+
+        <div class="scanner-card">
+            <div class="scan-view">
+                <div class="scanner-frame" id="camView">
+                    <!-- Raw camera feed -->
+                    <video id="vs-video" autoplay playsinline muted
+                        style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video>
+                    <!-- Hidden canvas for jsQR -->
+                    <canvas id="vs-canvas" style="display:none;"></canvas>
+                    <!-- Viewfinder overlay -->
+                    <div class="scan-overlay">
+                        <div class="scan-cutout" id="scan-cutout">
+                            <div class="scan-line" id="scan-line" style="display:none;"></div>
+                            <div class="corner-br"></div>
+                            <div class="corner-bl"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="scan-hint" id="scanHint" style="display:none;">
+                    Point at the owner's verification QR code
+                    <small>Keep QR inside the green frame — it scans automatically</small>
+                </div>
+                <button class="btn-toggle btn-start" id="startBtn" onclick="startScanner()"
+                    style="width:100%; padding:16px; border-radius:12px; border:none; font-weight:800; font-size:1rem; cursor:pointer; margin-top:20px; background:var(--primary); color:white;">
+                    <i class="fas fa-camera"></i> Start Scanner
+                </button>
+                <button class="btn-toggle btn-stop" id="stopBtn" onclick="stopScanner()"
+                    style="width:100%; padding:16px; border-radius:12px; border:none; font-weight:800; font-size:1rem; cursor:pointer; margin-top:20px; background:#ef4444; color:white; display:none;">
+                    <i class="fas fa-stop"></i> Stop Scanner
+                </button>
+            </div>
+        </div>
+
+        <div class="res-card" id="resCard">
+            <h2 style="color: var(--primary); font-size: 1.2rem; font-weight: 800;">Verify Details</h2>
+            <div id="resBody" class="info-grid"></div>
+            <div id="resFooter"></div>
+        </div>
+    </main>
+    <script>
+        // Read auth token from cookie (always fresh, no stale Jinja token issue)
+        function getCookie(name) {
+            const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+            return v ? decodeURIComponent(v[2]) : null;
+        }
+        const token = getCookie('access_token') || "{{ token }}";
+        let vsStream = null;
+        let vsAnimFrame = null;
+        let vsActive = false;
+
+        async function startScanner() {
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            document.getElementById('scan-line').style.display = 'block';
+            document.getElementById('scanHint').style.display = 'block';
+            vsActive = true;
+
+            const video = document.getElementById('vs-video');
+            const constraints = {
+                video: {
+                    facingMode: { ideal: 'environment' },
+                    width:  { min: 640, ideal: 1920, max: 1920 },
+                    height: { min: 480, ideal: 1080, max: 1080 },
+                    advanced: [{ focusMode: 'continuous' }]
+                }
+            };
+
+            try {
+                vsStream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (e) {
+                try { vsStream = await navigator.mediaDevices.getUserMedia({ video: true }); }
+                catch (e2) {
+                    Swal.fire('Camera Error', 'Hindi ma-access ang camera. I-allow ang permissions sa browser.', 'error');
+                    stopScanner(); return;
+                }
+            }
+
+            video.srcObject = vsStream;
+            video.play();
+            video.addEventListener('loadedmetadata', startVSLoop, { once: true });
+        }
+
+        function startVSLoop() {
+            const video  = document.getElementById('vs-video');
+            const canvas = document.getElementById('vs-canvas');
+            const ctx    = canvas.getContext('2d', { willReadFrequently: true });
+
+            function tick() {
+                if (!vsActive) return;
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width  = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0);
+                    const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+                    if (code) {
+                        // Flash green cutout
+                        const cutout = document.getElementById('scan-cutout');
+                        if (cutout) cutout.style.filter = 'brightness(2)';
+                        stopScanner();
+                        verifyQR(code.data);
+                        return;
+                    }
+                }
+                vsAnimFrame = requestAnimationFrame(tick);
+            }
+            vsAnimFrame = requestAnimationFrame(tick);
+        }
+
+        function stopScanner() {
+            vsActive = false;
+            if (vsAnimFrame) { cancelAnimationFrame(vsAnimFrame); vsAnimFrame = null; }
+            if (vsStream)    { vsStream.getTracks().forEach(t => t.stop()); vsStream = null; }
+            const video = document.getElementById('vs-video');
+            if (video) video.srcObject = null;
+            document.getElementById('startBtn').style.display = 'block';
+            document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('scan-line').style.display = 'none';
+            document.getElementById('scanHint').style.display = 'none';
+        }
+
+        async function processFile(input) {
+            if (!input.files[0]) return;
+            const file = input.files[0];
+            const imgEl = new Image();
+            const url = URL.createObjectURL(file);
+            imgEl.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = imgEl.width; canvas.height = imgEl.height;
+                canvas.getContext('2d').drawImage(imgEl, 0, 0);
+                const imageData = canvas.getContext('2d').getImageData(0, 0, imgEl.width, imgEl.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                URL.revokeObjectURL(url);
+                if (code) { verifyQR(code.data); }
+                else { Swal.fire('Error', 'No valid QR code found in that image.', 'error'); }
+            };
+            imgEl.src = url;
+        }
+
+        async function verifyQR(text) {
+            const fd = new FormData(); fd.append('token', token); fd.append('qr_data', text);
+            const res = await fetch('/admin/verify-qr', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (!data.success) { Swal.fire('Invalid', data.message, 'error'); return; }
+            
+            const item = data.item;
+            let bodyHtml = `
+                <div class="info-item"><div class="info-label">Item</div><div class="info-value">${item.item_name}</div></div>
+                <div class="info-item"><div class="info-label">Owner/Reporter</div><div class="info-value">${item.reporter}</div></div>
+            `;
+
+            if (item.security_question) {
+                bodyHtml += `<div class="security-box"><div class="info-label">Challenge Question</div><div>${item.security_question}</div><input type="text" id="secAns" class="security-input" placeholder="Enter owner's answer..."><button onclick="checkAns('${item.security_answer}')" id="vBtn" style="margin-top:10px; background:var(--accent); border:none; padding:8px; border-radius:8px; cursor:pointer; width:100%; font-weight:700;">Verify Answer</button></div>`;
+            }
+
+            document.getElementById('resBody').innerHTML = bodyHtml;
+            document.getElementById('resFooter').innerHTML = item.is_claimed ? '<div style="text-align:center; color:var(--success); font-weight:800;">ALREADY RETURNED</div>' : `<button class="btn-confirm" id="cBtn" ${item.security_question ? 'disabled style="opacity:0.5;"' : ''} onclick="markClaimed(${item.id})">Confirm Handover</button>`;
+            document.getElementById('resCard').style.display = 'block';
+        }
+
+        function checkAns(correct) {
+            if (document.getElementById('secAns').value.toLowerCase().trim() === correct.toLowerCase().trim()) {
+                Swal.fire('Identity Verified', 'You may proceed with handover.', 'success');
+                document.getElementById('cBtn').disabled = false; document.getElementById('cBtn').style.opacity = '1';
+                document.getElementById('vBtn').style.display = 'none';
+            } else { Swal.fire('Failed', 'Incorrect answer.', 'error'); }
+        }
+
+        function toggleMobileNav() {
+            document.getElementById('mobileNav').classList.toggle('active');
+        }
+
+        window.onclick = function(event) {
+            const nav = document.getElementById('mobileNav');
+            const toggle = document.querySelector('.menu-toggle');
+            if (event.target !== nav && event.target !== toggle && !nav.contains(event.target) && nav.classList.contains('active')) {
+                nav.classList.remove('active');
+            }
+        }
+
+        async function markClaimed(id) {
+            const fd = new FormData(); fd.append('token', token); fd.append('item_id', id);
+            const res = await fetch('/admin/mark-claimed', { method: 'POST', body: fd });
+            if ((await res.json()).success) { Swal.fire('Success', 'Handover recorded.', 'success').then(() => location.reload()); }
+        }
+    </script>
+</body>
+</html>

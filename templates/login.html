@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login - EVSU TrackBox</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        :root {
+            --primary: #800000; /* EVSU Maroon */
+            --primary-dark: #5e0000;
+            --accent: #FFCC00;  /* EVSU Gold */
+            --bg-light: #F9F9F9;
+            --text-dark: #1a1a1a;
+            --white: #ffffff;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--white);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .split-wrapper {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* --- LEFT COLUMN --- */
+        .visual-column {
+            flex: 0.6;
+            background-color: var(--primary);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Geometric Pattern Overlay */
+        .visual-column::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+            opacity: 0.1;
+            z-index: 1;
+        }
+
+        /* Abstract Gradient Circles */
+        .visual-column::after {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 204, 0, 0.1) 0%, transparent 70%);
+            bottom: -200px;
+            left: -200px;
+            z-index: 0;
+        }
+
+        .visual-content {
+            position: relative;
+            z-index: 2;
+            max-width: 600px;
+            animation: slideInLeft 0.8s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .visual-content img {
+            height: 100px;
+            width: auto;
+            margin-bottom: 40px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
+        }
+
+        .visual-content h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            letter-spacing: -1.5px;
+        }
+
+        .visual-content p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 50px;
+            font-weight: 300;
+            line-height: 1.6;
+        }
+
+        .feature-icons {
+            display: flex;
+            gap: 40px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .feature-item i {
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+
+        .feature-item span {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        /* --- RIGHT COLUMN --- */
+        .form-column {
+            flex: 0.4;
+            background-color: var(--white);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            position: relative;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 400px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-box h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .login-box p.subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #444;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            font-size: 1rem;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border-radius: 12px;
+            border: 2px solid #f0f0f0;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: #fafafa;
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--white);
+            box-shadow: 0 0 0 4px rgba(128, 0, 0, 0.05);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #999;
+            padding: 5px;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 30px;
+        }
+
+        .forgot-link {
+            font-size: 0.85rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: var(--accent);
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(128, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(128, 0, 0, 0.3);
+        }
+
+        .footer-links {
+            text-align: center;
+            margin-top: 35px;
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        .footer-links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* --- OAUTH SECTION --- */
+        .oauth-section {
+            margin-top: 30px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 25px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #eee;
+        }
+
+        .divider:not(:empty)::before {
+            margin-right: 15px;
+        }
+
+        .divider:not(:empty)::after {
+            margin-left: 15px;
+        }
+
+        .divider span {
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .oauth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .oauth-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #444;
+            background: var(--white);
+            border: 2px solid #f0f0f0;
+            transition: var(--transition);
+        }
+
+        .oauth-btn i {
+            font-size: 1.1rem;
+        }
+
+        .oauth-btn:hover {
+            background: #fafafa;
+            border-color: #e0e0e0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .oauth-btn.google i { color: #DB4437; }
+        .oauth-btn.microsoft i { color: #00A4EF; }
+
+        /* --- RESPONSIVENESS --- */
+        @media (max-width: 1024px) {
+            .visual-column { padding: 40px; }
+            .visual-content h1 { font-size: 2.5rem; }
+            .feature-icons { flex-direction: column; gap: 20px; }
+        }
+
+        @media (max-width: 768px) {
+            .visual-column { display: none; }
+            .form-column { flex: 1; padding: 30px; }
+            body { overflow: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="split-wrapper">
+        <!-- LEFT COLUMN -->
+        <div class="visual-column">
+            <div class="visual-content">
+                <a href="/">
+                    <img src="/static/EVSU_logo.png" alt="EVSU Logo">
+                </a>
+                <h1>Welcome to<br>EVSU TrackBox</h1>
+                <p>The central hub for lost and found items within the Eastern Visayas State University community.</p>
+                
+                <div class="feature-icons">
+                    <div class="feature-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secure Login</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-bolt"></i>
+                        <span>Fast Reporting</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-search"></i>
+                        <span>Easy Search</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="form-column">
+            <div class="login-box">
+                <h2>Sign In</h2>
+                <p class="subtitle">Access your personal TrackBox dashboard</p>
+
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user"></i>
+                            <input name="username" type="text" placeholder="Enter your username" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input name="password" type="password" id="password" placeholder="Enter your password" required>
+                            <i class="fas fa-eye-slash toggle-password" onclick="togglePassword('password', this)"></i>
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <a href="/forgot-password" class="forgot-link">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="login-btn">
+                        <span>Sign In</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <!-- OAuth Section -->
+                <div class="oauth-section">
+                    <div class="divider">
+                        <span>OR</span>
+                    </div>
+
+                    <div class="oauth-buttons">
+                        <a href="/login/google" class="oauth-btn google">
+                            <i class="fab fa-google"></i>
+                            <span>Continue with Google</span>
+                        </a>
+                        <a href="/login/microsoft" class="oauth-btn microsoft">
+                            <i class="fab fa-microsoft"></i>
+                            <span>EVSU Student Mail</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer-links">
+                    Don’t have an account? <a href="/register">Create an account</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(fieldId, icon) {
+            const passwordInput = document.getElementById(fieldId);
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            } else {
+                passwordInput.type = "password";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const btn = e.target.querySelector('button');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Authenticating...';
+
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.cookie = `access_token=${data.token}; path=/; max-age=86400`;
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Redirecting to your dashboard...',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        timerProgressBar: true,
+                        background: '#fff',
+                        iconColor: '#800000'
+                    }).then(() => {
+                        window.location.href = data.redirect;
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login Failed',
+                        text: data.detail || 'Invalid username or password',
+                        confirmButtonColor: '#800000'
+                    });
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Connection failed. Please try again.',
+                    confirmButtonColor: '#800000'
+                });
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        });
+    </script>
+</body>
+</html>
