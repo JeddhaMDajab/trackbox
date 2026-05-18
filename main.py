@@ -234,6 +234,14 @@ Base.metadata.create_all(bind=engine)
 # ======================= APP SETUP =======================
 app = FastAPI()
 
+# Middleware to handle HTTPS proxy redirection (e.g. Railway TLS termination)
+@app.middleware("http")
+async def forward_proto_middleware(request: Request, call_next):
+    if request.headers.get("x-forwarded-proto") == "https":
+        request.scope["scheme"] = "https"
+    response = await call_next(request)
+    return response
+
 # Starlette SessionMiddleware (required for Authlib)
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
@@ -435,8 +443,8 @@ def login(
 @app.get("/login/google")
 async def login_google(request: Request):
     redirect_uri = request.url_for('auth_google')
-    # If using ngrok/proxy, ensure the scheme is https if needed
-    if "ngrok-free.dev" in str(request.base_url):
+    # If not on localhost, force the scheme to https
+    if "localhost" not in str(request.base_url) and "127.0.0.1" not in str(request.base_url):
         redirect_uri = str(redirect_uri).replace("http://", "https://")
     return await oauth.google.authorize_redirect(request, str(redirect_uri))
 
