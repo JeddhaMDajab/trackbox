@@ -1194,7 +1194,8 @@ def get_all_items(token: str, db: Session = Depends(get_db)):
             "type": "lost",
             "status": item.status,
             "is_verified": False,
-            "is_claimed": False
+            "is_claimed": False,
+            "reporter": item.reporter
         })
     
     # Add FOUND items from found_items table
@@ -1209,7 +1210,8 @@ def get_all_items(token: str, db: Session = Depends(get_db)):
             "type": "found",
             "status": item.status,
             "is_verified": item.is_verified,
-            "is_claimed": item.is_claimed
+            "is_claimed": item.is_claimed,
+            "reporter": item.reporter
         })
     
     # Add FOUND items from lost_items table
@@ -1227,7 +1229,8 @@ def get_all_items(token: str, db: Session = Depends(get_db)):
             "type": "found",
             "status": item.status,
             "is_verified": False,  # Student custody
-            "is_claimed": is_p2p_claimed
+            "is_claimed": is_p2p_claimed,
+            "reporter": item.reporter
         })
 
     all_items.sort(key=lambda x: x["reported_at"], reverse=True)
@@ -1241,10 +1244,15 @@ def delete_item(item_id: int, token: str, table: Optional[str] = None, db: Sessi
         return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
 
     item = None
+    # Look up in the requested table first, with fallback to the other table
     if table == "found":
         item = db.query(FoundItem).filter(FoundItem.id == item_id).first()
+        if not item:
+            item = db.query(LostItem).filter(LostItem.id == item_id).first()
     elif table == "lost":
         item = db.query(LostItem).filter(LostItem.id == item_id).first()
+        if not item:
+            item = db.query(FoundItem).filter(FoundItem.id == item_id).first()
     else:
         # Fallback search both
         item = db.query(LostItem).filter(LostItem.id == item_id).first()
@@ -1256,8 +1264,39 @@ def delete_item(item_id: int, token: str, table: Optional[str] = None, db: Sessi
 
     # Soft Delete (Archiving) instead of hard delete
     item.is_archived = True
+    item.status = "Rejected"
     db.commit()
-    return {"success": True, "message": "Item archived successfully"}
+
+    # Send rejection email notification to the reporter
+    try:
+        recipient_email = None
+        if item.reporter:
+            if "@" in item.reporter:
+                recipient_email = item.reporter
+            else:
+                user = db.query(User).filter(User.username == item.reporter).first()
+                if user:
+                    recipient_email = user.email
+            
+            if recipient_email:
+                subject = f"TrackBox EVSU - Item Report Rejected"
+                message_content = f"""Hello {item.reporter},
+
+We would like to inform you that your report for the item '{item.item_name}' has been reviewed by the TrackBox Administration.
+
+Status: REJECTED
+Reason: The report did not meet our verification guidelines or has been marked as invalid.
+
+If you believe this was an error, please contact the security office or system administrator.
+
+Thank you,
+TrackBox Administration
+Eastern Visayas State University"""
+                send_email_notification(recipient_email, subject, message_content)
+    except Exception as email_err:
+        print(f"Failed to send rejection email: {email_err}")
+
+    return {"success": True, "message": "Item archived successfully and reporter notified"}
     
 @app.get("/admin/qr-scanner", response_class=HTMLResponse)
 def qr_scanner(request: Request, token: Optional[str] = None):
