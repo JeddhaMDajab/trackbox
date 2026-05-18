@@ -122,22 +122,25 @@
         #qr-code { background: white; padding: 15px; border-radius: 15px; display: inline-block; margin-bottom: 25px; border: 1px solid #eee; }
         .btn-save { background: var(--primary); color: white; padding: 12px 25px; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; margin-right: 10px; }
 
+        .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: var(--primary); cursor: pointer; }
+        .topbar-left { display: flex; align-items: center; gap: 15px; }
+
         @media (max-width: 1024px) {
             .sidebar { width: 85px; }
             .sidebar-brand span, .sidebar nav a span { display: none; }
             .sidebar-brand { justify-content: center; padding: 20px; }
             .sidebar nav a { justify-content: center; padding: 20px; }
-            .topbar, .main { left: 85px; }
+            .topbar { left: 85px; }
+            .main { margin-left: 85px; }
         }
 
         @media (max-width: 768px) {
-            .sidebar { left: -280px; width: 280px; transition: transform 0.3s ease; }
-            .sidebar.active { transform: translateX(280px); left: 0; }
+            .sidebar { left: -280px; width: 280px; transition: left 0.3s ease; z-index: 2000; }
+            .sidebar.active { left: 0; }
             .sidebar-brand span, .sidebar nav a span { display: flex; }
-            .topbar, .main { left: 0; }
-            .topbar { padding: 0 20px; }
+            .topbar { left: 0; padding: 0 20px; }
+            .main { margin-left: 0; width: 100%; padding: 100px 20px 40px 20px; }
             .menu-toggle { display: block; }
-            .main { padding: 100px 20px 40px 20px; }
             .search-card { padding: 30px 20px; border-radius: 20px; }
             .search-card h1 { font-size: 1.6rem; }
             .search-form { grid-template-columns: 1fr; gap: 20px; }

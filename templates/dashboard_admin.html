@@ -116,6 +116,8 @@
         .chart-card h3 { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
         .chart-card h3 i { color: var(--accent); }
 
+        .menu-toggle { display: none; }
+
         @media (max-width: 1024px) { 
             .sidebar { width: 85px; } 
             .sidebar-brand span, .sidebar nav a span, .btn-logout-sidebar span { display: none; } 
@@ -125,8 +127,8 @@
         }
 
         @media (max-width: 768px) {
-            .sidebar { left: -280px; width: 280px; transition: transform 0.3s ease; }
-            .sidebar.active { transform: translateX(280px); left: 0; }
+            .sidebar { left: -280px; width: 280px; transition: left 0.3s ease; z-index: 2000; }
+            .sidebar.active { left: 0; }
             .sidebar-brand span, .sidebar nav a span, .btn-logout-sidebar span { display: flex; }
             .main { margin-left: 0; width: 100%; padding: 20px; }
             .topbar { flex-direction: column; gap: 20px; align-items: flex-start; padding: 20px; margin-top: 60px; }
@@ -134,7 +136,6 @@
             .charts-container { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: 1fr; }
         }
-        .menu-toggle { display: none; }
     </style>
 </head>
 <body>
@@ -364,11 +365,8 @@
                     </select>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button onclick="downloadReport('xlsx')" style="background: #10b981; color: white; border: none; padding: 14px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-file-excel"></i> Excel (.xlsx)
-                    </button>
-                    <button onclick="downloadReport('docx')" style="background: #2563eb; color: white; border: none; padding: 14px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-file-word"></i> Word (.docx)
+                    <button onclick="downloadReport('xlsx')" style="background: var(--primary); color: white; border: none; padding: 14px 30px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-file-invoice"></i> Generate Branded Report
                     </button>
                 </div>
             </div>
@@ -389,7 +387,7 @@
             
             <div style="margin-top: 40px; padding: 20px; border-radius: 12px; background: #fffbeb; border: 1px solid #fef3c7; display: flex; gap: 15px; align-items: center;">
                 <i class="fas fa-info-circle" style="color: #92400e; font-size: 1.2rem;"></i>
-                <p style="font-size: 0.85rem; color: #92400e;"><b>Tip:</b> Backups are downloaded in <b>.db</b> format. You can open them using any SQLite viewer to inspect historical data.</p>
+                <p style="font-size: 0.85rem; color: #92400e;"><b>Tip:</b> Backups are downloaded as a <b>.zip</b> archive. Extract the file to get the <b>.db</b> database which can be opened with any SQLite viewer.</p>
             </div>
         </div>
     </main>

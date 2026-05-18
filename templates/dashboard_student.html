@@ -465,21 +465,23 @@
             .sidebar-brand span, .sidebar nav a span { display: none; }
             .sidebar-brand { justify-content: center; padding: 20px; }
             .sidebar nav a { justify-content: center; padding: 20px; }
-            .topbar, .main { left: 85px; }
+            .topbar { left: 85px; }
+            .main { margin-left: 85px; }
         }
 
         @media (max-width: 768px) {
             .sidebar { 
                 left: -280px; 
                 width: 280px; 
-                transition: transform 0.3s ease; 
+                transition: left 0.3s ease; 
+                z-index: 2000;
             }
             .sidebar.active { 
-                transform: translateX(280px);
                 left: 0;
             }
             .sidebar-brand span, .sidebar nav a span { display: flex; } /* Show text in mobile drawer */
-            .topbar, .main { left: 0; }
+            .topbar { left: 0; }
+            .main { margin-left: 0; width: 100%; padding: 100px 20px 40px 20px; }
             .topbar { padding: 0 20px; }
             .menu-toggle { display: block; }
             .main { padding: 100px 20px 40px 20px; }

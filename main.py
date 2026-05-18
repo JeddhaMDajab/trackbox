@@ -81,7 +81,14 @@ SMTP_PASS = "zrof glry shbn fceq"    # Replace with your App Password
 MAIL_FROM = "jeddha.dajab@evsu.edu.ph"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'trackbox.db')}"
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'trackbox.db')}"
+elif DATABASE_URL.startswith("mysql://"):
+    DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
+elif DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 UPLOAD_FOLDER = "uploads"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -90,7 +97,10 @@ os.makedirs("templates", exist_ok=True)
 os.makedirs("temp_uploads", exist_ok=True)
 
 # ======================= DATABASE =======================
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
@@ -2344,10 +2354,10 @@ def delete_building(token: str = Form(...), b_id: int = Form(...), db: Session =
 import csv
 import io
 import openpyxl
+import zipfile
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from docx import Document
-from docx.shared import Inches, Pt
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from openpyxl.drawing.image import Image as XLImage
+from openpyxl.utils import get_column_letter
 from fastapi.responses import StreamingResponse, FileResponse
 
 @app.get("/admin/export/report")
@@ -2396,28 +2406,47 @@ def export_monthly_report(
         header_font = Font(name='Arial', size=10, bold=True, color="FFFFFF")
         header_fill = PatternFill(start_color="800000", end_color="800000", fill_type="solid")
         center_align = Alignment(horizontal='center', vertical='center')
-        left_align = Alignment(horizontal='left', vertical='center')
         
-        # Report Title & Metadata
-        ws.append(["TRACKBOX MONTHLY REPORT"])
-        ws.merge_cells('A1:H1')
-        ws[f'A1'].font = title_font
-        ws[f'A1'].alignment = center_align
+        # --- LOGO SECTION ---
+        # Adjust row heights for logos (Row 1-5 for header)
+        ws.row_dimensions[1].height = 60 
         
-        ws.append([f"Building: {building or 'All Campus'}", f"Period: {month}/{year if month else 'All Time'}"])
-        ws.append([])
+        # Add EVSU Logo (Left)
+        try:
+            evsu_img = XLImage('EVSU_logo.png')
+            evsu_img.width, evsu_img.height = 70, 70
+            ws.add_image(evsu_img, 'A1')
+        except: pass
+
+        # Add Bagong Pilipinas Logo (Right) - Using user's filename typo 'bagon_pilipinas.jpg'
+        try:
+            bp_img = XLImage('bagon_pilipinas.jpg')
+            bp_img.width, bp_img.height = 70, 70
+            ws.add_image(bp_img, 'H1')
+        except: pass
+
+        # Report Title
+        ws.merge_cells('B1:G1')
+        ws['B1'] = "TRACKBOX MONTHLY REPORT"
+        ws['B1'].font = title_font
+        ws['B1'].alignment = center_align
+        
+        ws.append([]) # Row 2
+        ws.append([f"Building: {building or 'All Campus'}", "", f"Period: {month}/{year if month else 'All Time'}"]) # Row 3
+        ws.append([]) # Row 4
         
         # Borders
         thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
         
         # Found Items Section
+        curr_row = ws.max_row + 1
         ws.append(["FOUND ITEMS (OFFICIAL)"])
-        ws.merge_cells(f'A4:H4')
-        ws[f'A4'].font = Font(bold=True, size=11, color="800000")
+        ws.merge_cells(f'A{curr_row}:H{curr_row}')
+        ws[f'A{curr_row}'].font = Font(bold=True, size=11, color="800000")
         
         headers_found = ["ID", "Item Name", "Category", "Building", "Location", "Status", "Date Found", "Reporter/Finder"]
         ws.append(headers_found)
-        header_row = 5
+        header_row = ws.max_row
         for cell in ws[header_row]:
             cell.font = header_font
             cell.fill = header_fill
@@ -2427,7 +2456,6 @@ def export_monthly_report(
         for i, item in enumerate(found_items):
             row = [item.id, item.item_name, item.category, item.building, item.found_in, item.status, item.created_at.strftime('%Y-%m-%d'), item.reporter]
             ws.append(row)
-            # Alternating colors and borders
             curr_row_idx = ws.max_row
             fill = PatternFill(start_color="FFF4F4", end_color="FFF4F4", fill_type="solid") if i % 2 == 1 else None
             for cell in ws[curr_row_idx]:
@@ -2463,15 +2491,17 @@ def export_monthly_report(
         # --- AUTOFIT COLUMNS ---
         for col in ws.columns:
             max_length = 0
-            column = col[0].column_letter # Get the column name
+            column_letter = get_column_letter(col[0].column)
             for cell in col:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
+                # Skip merged cells for length calculation to avoid errors
+                if hasattr(cell, 'value') and cell.value:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
             adjusted_width = (max_length + 4)
-            ws.column_dimensions[column].width = adjusted_width
+            ws.column_dimensions[column_letter].width = adjusted_width
 
         # Save to buffer
         output = io.BytesIO()
@@ -2482,102 +2512,6 @@ def export_monthly_report(
         return StreamingResponse(
             output,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
-    except Exception as e:
-        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
-
-@app.get("/admin/export/report/docx")
-def export_monthly_report_docx(
-    token: str, 
-    month: int = None, 
-    year: int = None, 
-    building: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
-    try:
-        verify_admin_token(token)
-        
-        # Data fetching (same as excel)
-        found_q = db.query(FoundItem)
-        lost_q = db.query(LostItem)
-        if building and building != "All Campus":
-            found_q = found_q.filter(FoundItem.building == building)
-            lost_q = lost_q.filter(LostItem.building == building)
-        if month and year:
-            m_str = f"{month:02d}"; y_str = str(year)
-            found_q = found_q.filter(func.strftime('%m', FoundItem.created_at) == m_str, func.strftime('%Y', FoundItem.created_at) == y_str)
-            lost_q = lost_q.filter(func.strftime('%m', LostItem.created_at) == m_str, func.strftime('%Y', LostItem.created_at) == y_str)
-        
-        found_items = found_q.all()
-        lost_items = lost_q.all()
-
-        # Try to use template.docx, or create new
-        try:
-            doc = Document('template.docx')
-        except:
-            doc = Document()
-            
-        # Add Header if new doc
-        if not doc.paragraphs:
-            title = doc.add_heading('TRACKBOX MONTHLY REPORT', 0)
-            title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            
-        p = doc.add_paragraph()
-        p.add_run(f"Building: {building or 'All Campus'}\n").bold = True
-        p.add_run(f"Period: {month}/{year if month else 'All Time'}").italic = True
-        
-        # Found Items Table
-        doc.add_heading('Found Items (Official)', level=1)
-        table = doc.add_table(rows=1, cols=8)
-        table.style = 'Table Grid'
-        hdr_cells = table.rows[0].cells
-        for idx, text in enumerate(["ID", "Item Name", "Category", "Building", "Location", "Status", "Date", "Reporter"]):
-            hdr_cells[idx].text = text
-            hdr_cells[idx].paragraphs[0].runs[0].bold = True
-            
-        for item in found_items:
-            row_cells = table.add_row().cells
-            row_cells[0].text = str(item.id)
-            row_cells[1].text = item.item_name
-            row_cells[2].text = item.category
-            row_cells[3].text = item.building
-            row_cells[4].text = item.found_in
-            row_cells[5].text = item.status
-            row_cells[6].text = item.created_at.strftime('%Y-%m-%d')
-            row_cells[7].text = item.reporter or 'N/A'
-
-        doc.add_page_break()
-        
-        # Lost Items Table
-        doc.add_heading('Lost & Found Reports (Student)', level=1)
-        table2 = doc.add_table(rows=1, cols=9)
-        table2.style = 'Table Grid'
-        hdr_cells2 = table2.rows[0].cells
-        for idx, text in enumerate(["ID", "Type", "Item", "Category", "Building", "Location", "Status", "Date", "Reporter"]):
-            hdr_cells2[idx].text = text
-            hdr_cells2[idx].paragraphs[0].runs[0].bold = True
-            
-        for item in lost_items:
-            row_cells = table2.add_row().cells
-            row_cells[0].text = str(item.id)
-            row_cells[1].text = item.type
-            row_cells[2].text = item.item_name
-            row_cells[3].text = item.category
-            row_cells[4].text = item.building
-            row_cells[5].text = item.last_seen
-            row_cells[6].text = item.status
-            row_cells[7].text = item.created_at.strftime('%Y-%m-%d')
-            row_cells[8].text = item.reporter or 'N/A'
-
-        output = io.BytesIO()
-        doc.save(output)
-        output.seek(0)
-        
-        filename = f"TrackBox_Report_{building or 'All'}_{month or 'Total'}_{year or ''}.docx"
-        return StreamingResponse(
-            output,
-            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     except Exception as e:
@@ -2614,14 +2548,19 @@ def download_backup(token: str):
         if not os.path.exists(db_file):
             return JSONResponse({"success": False, "message": "Database file not found"})
         
-        # We could create a zip or a timestamped copy, but direct file response is efficient
+        # Create ZIP archive in memory
         timestamp = get_ph_time().strftime("%Y%m%d_%H%M%S")
-        filename = f"TrackBox_Backup_{timestamp}.db"
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            zip_file.write(db_file, arcname=f"trackbox_{timestamp}.db")
         
-        return FileResponse(
-            path=db_file,
-            filename=filename,
-            media_type="application/x-sqlite3"
+        zip_buffer.seek(0)
+        filename = f"TrackBox_Full_Backup_{timestamp}.zip"
+        
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
@@ -2631,7 +2570,10 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
     await manager.connect(username, websocket)
     try:
         while True:
-            await websocket.receive_text() # Keep connection alive
+            data = await websocket.receive_json()
+            receiver = data.get("receiver")
+            if receiver:
+                await manager.send_personal_message(data, receiver)
     except WebSocketDisconnect:
         manager.disconnect(username)
 

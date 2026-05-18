@@ -125,29 +125,30 @@
 
         .btn-submit:hover { background: var(--primary-dark); transform: translateY(-3px); }
 
+        .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: var(--primary); cursor: pointer; }
+        .topbar { transition: var(--transition); }
+        .topbar-left { display: flex; align-items: center; gap: 15px; }
+
         @media (max-width: 1024px) {
             .sidebar { width: 85px; }
             .sidebar-brand span, .sidebar nav a span { display: none; }
             .sidebar-brand { justify-content: center; padding: 20px; }
             .sidebar nav a { justify-content: center; padding: 20px; }
-            .topbar, .main { left: 85px; }
+            .topbar { left: 85px; }
+            .main { margin-left: 85px; }
         }
 
         @media (max-width: 768px) {
-            .sidebar { left: -280px; width: 280px; transition: transform 0.3s ease; }
-            .sidebar.active { transform: translateX(280px); left: 0; }
+            .sidebar { left: -280px; width: 280px; transition: left 0.3s ease; z-index: 2000; }
+            .sidebar.active { left: 0; }
             .sidebar-brand span, .sidebar nav a span { display: flex; }
-            .topbar, .main { left: 0; }
-            .topbar { padding: 0 20px; }
+            .topbar { left: 0; padding: 0 20px; }
+            .main { margin-left: 0; width: 100%; padding: 100px 20px 40px 20px; }
             .menu-toggle { display: block; }
-            .main { padding: 100px 20px 40px 20px; }
             .form-card { padding: 30px 20px; border-radius: 20px; }
             .form-card h1 { font-size: 1.6rem; }
             .btn-submit { padding: 15px; font-size: 1rem; }
         }
-        .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: var(--primary); cursor: pointer; }
-        .topbar { transition: var(--transition); }
-        .topbar-left { display: flex; align-items: center; gap: 15px; }
     </style>
 </head>
 <body>
@@ -279,6 +280,17 @@
     </div>
 
     <script>
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+        }
+        window.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+            if (window.innerWidth <= 768 && sidebar && toggle && !sidebar.contains(e.target) && !toggle.contains(e.target) && sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
+
         async function loadBuildings() {
             const res = await fetch('/api/buildings');
             const data = await res.json();

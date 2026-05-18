@@ -288,6 +288,66 @@
             font-size: 0.95rem;
         }
 
+        /* --- FEATURES SECTION --- */
+        #features {
+            background-color: var(--white);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: var(--bg-light);
+            padding: 30px;
+            border-radius: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.02);
+            transition: var(--transition);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(128, 0, 0, 0.05);
+            color: var(--primary);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
+
+        .feature-card:hover .feature-icon {
+            background: var(--primary);
+            color: var(--accent);
+        }
+
+        .feature-info h3 {
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .feature-info p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
         /* --- FEATURES SECTION (Mini) --- */
         .feature-tags {
             display: flex;
@@ -362,7 +422,7 @@
                 Fast, secure, and reliable lost-and-found management.
             </p>
 
-            <div class="feature-tags" id="features">
+            <div class="feature-tags">
                 <div class="tag"><i class="fas fa-bolt"></i> Fast Reporting</div>
                 <div class="tag"><i class="fas fa-qrcode"></i> QR Verification</div>
                 <div class="tag"><i class="fas fa-shield-alt"></i> Secure Data</div>
@@ -413,6 +473,65 @@
                 <i class="fas fa-users"></i>
                 <h3>Community First</h3>
                 <p>Built exclusively for the EVSU family. Every report submitted helps build a more honest and supportive university community.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES SECTION -->
+    <section id="features" class="section-padding">
+        <div class="section-title">
+            <h2>Key Features</h2>
+            <p>Everything you need to report, track, and recover your lost belongings efficiently.</p>
+        </div>
+
+        <div class="features-grid">
+            <!-- Feature 1 -->
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-qrcode"></i></div>
+                <div class="feature-info">
+                    <h3>QR Verification</h3>
+                    <p>Securely claim items using a unique, auto-generated QR code verified by campus security.</p>
+                </div>
+            </div>
+            <!-- Feature 2 -->
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-magic"></i></div>
+                <div class="feature-info">
+                    <h3>Smart Matching</h3>
+                    <p>Our system automatically suggests matches between reported lost items and newly found items.</p>
+                </div>
+            </div>
+            <!-- Feature 3 -->
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-chart-pie"></i></div>
+                <div class="feature-info">
+                    <h3>Admin Dashboard</h3>
+                    <p>Comprehensive dashboard for guards and admins to manage inventory, logs, and user roles.</p>
+                </div>
+            </div>
+            <!-- Feature 4 -->
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-file-export"></i></div>
+                <div class="feature-info">
+                    <h3>Monthly Reports</h3>
+                    <p>Generate styled Excel documents showing all monthly found and lost item statistics instantly.</p>
+                </div>
+            </div>
+            <!-- Feature 5 -->
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fab fa-google"></i></div>
+                <div class="feature-info">
+                    <h3>SSO Login</h3>
+                    <p>Hassle-free access via Google single sign-on restricted specifically to the @evsu.edu.ph domain.</p>
+                </div>
+            </div>
+            <!-- Feature 6 -->
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-bell"></i></div>
+                <div class="feature-info">
+                    <h3>Status Tracking</h3>
+                    <p>Track the status of your reported item (Pending, Verified, Claimed) directly from your dashboard.</p>
+                </div>
             </div>
         </div>
     </section>
