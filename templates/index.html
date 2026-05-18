@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackBox: Lost and Found Management System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        evsuRed: '#800000',
+                        evsuRedDark: '#5c0000',
+                        evsuGold: '#FFD700',
+                        evsuGoldDark: '#e6c200',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen text-gray-800">
+
+    <!-- Navigation Bar -->
+    <header class="bg-evsuRed text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo / Title -->
+                <div class="flex-shrink-0 flex items-center gap-3">
+                    <!-- Optional: Placeholder for logo -->
+                    <div class="flex items-center justify-center w-10 h-10 bg-white rounded-lg border-b-[3px] border-gray-200 shadow-sm">
+                        <svg class="w-[22px] h-[22px] text-evsuRed" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    </div>
+                    <span class="font-extrabold text-2xl tracking-tight text-white drop-shadow-sm">Track<span class="text-evsuGold">Box</span></span>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <nav class="hidden md:flex space-x-8 items-center">
+                    <a href="#" class="text-gray-200 hover:text-white transition duration-200 font-medium tracking-wide">Home</a>
+                    <a href="#about" class="text-gray-200 hover:text-white transition duration-200 font-medium tracking-wide">About</a>
+                    <a href="#contact" class="text-gray-200 hover:text-white transition duration-200 font-medium tracking-wide">Contact</a>
+                </nav>
+
+                <!-- Auth Buttons -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="/login" class="text-white hover:text-evsuGold transition duration-200 font-medium">Login</a>
+                    <a href="/register" class="bg-evsuGold text-evsuRed hover:bg-evsuGoldDark font-semibold py-2 px-5 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-0.5">Create Account</a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button class="text-white hover:text-evsuGold focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        <!-- Hero Section -->
+        <section class="relative bg-white overflow-hidden py-20 lg:py-32">
+            <!-- Background decorative blob -->
+            <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-evsuRed opacity-5 rounded-full blur-3xl mix-blend-multiply"></div>
+            
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="text-center max-w-4xl mx-auto">
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
+                        Helping the EVSU Community <br class="hidden md:block">
+                        <span class="text-evsuRed text-transparent bg-clip-text bg-gradient-to-r from-evsuRed to-evsuRedDark">Reunite with Lost Belongings</span>
+                    </h1>
+                    <p class="mt-4 text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto font-light">
+                        A dedicated platform for students, faculty, and security personnel of EVSU Ormoc Campus to quickly report and recover misplaced items.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                        <!-- Primary CTA -->
+                        <a href="#" class="inline-flex justify-center items-center bg-evsuRed text-white hover:bg-evsuRedDark font-semibold py-3 px-8 rounded-full shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl text-lg">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            Report a Lost Item
+                        </a>
+                        <!-- Secondary CTA -->
+                        <a href="#" class="inline-flex justify-center items-center bg-white text-evsuRed border-2 border-evsuRed hover:bg-red-50 font-semibold py-3 px-8 rounded-full shadow-md transition-all duration-300 transform hover:-translate-y-1 text-lg">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Log a Found Item
+                            <span class="ml-2 text-xs font-normal text-gray-500">(Security/Staff)</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Information / Workflow Section -->
+        <section id="about" class="py-20 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">How TrackBox Works</h2>
+                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">Our streamlined process ensures lost items find their way back to their rightful owners quickly and efficiently.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <!-- Step 1: Report -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8 relative hover:shadow-xl transition duration-300 border border-gray-100 flex flex-col items-center text-center group">
+                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-evsuRed mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">1. Report</h3>
+                        <p class="text-gray-600">Students and faculty can easily report missing belongings, or security staff can log found items into the centralized database.</p>
+                    </div>
+
+                    <!-- Step 2: Match -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8 relative hover:shadow-xl transition duration-300 border border-t-4 border-t-evsuGold flex flex-col items-center text-center group">
+                        <div class="w-16 h-16 bg-yellow-50 rounded-full flex items-center justify-center text-evsuGoldDark mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">2. Match</h3>
+                        <p class="text-gray-600">Our intelligent system processes the data and typically finds a potential match between a lost report and a found log <strong class="text-evsuRed">within 60 seconds</strong>.</p>
+                    </div>
+
+                    <!-- Step 3: Claim -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8 relative hover:shadow-xl transition duration-300 border border-gray-100 flex flex-col items-center text-center group">
+                        <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center text-green-600 mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">3. Claim</h3>
+                        <p class="text-gray-600">Once verified, claiming instructions are provided, and the owner can securely retrieve their item from the designated security office.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-gray-900 text-gray-300 py-12 border-t border-gray-800 border-t-4 border-t-evsuGold">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+                <div class="col-span-1 lg:col-span-2">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 bg-evsuGold rounded-full flex items-center justify-center text-evsuRed font-bold text-sm">TB</div>
+                        <span class="font-bold text-xl tracking-tight text-white">TrackBox</span>
+                    </div>
+                    <p class="text-sm text-gray-400 max-w-sm mb-4">
+                        A modern Lost and Found Management System built exclusively for the Eastern Visayas State University (EVSU) - Ormoc Campus community.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-semibold mb-4 text-lg">System Links</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-evsuGold transition">Home</a></li>
+                        <li><a href="#about" class="hover:text-evsuGold transition">How it Works</a></li>
+                        <li><a href="#" class="hover:text-evsuGold transition">Report Lost Item</a></li>
+                        <li><a href="#" class="hover:text-evsuGold transition">Log Found Item</a></li>
+                        <li><a href="#" class="hover:text-evsuGold transition">Security Login</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-semibold mb-4 text-lg">Contact Campus Security</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> EVSU Ormoc Campus</li>
+                        <li class="flex items-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg> security@evsu.edu.ph</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500">
+                <div class="mb-4 md:mb-0">
+                    <p>&copy; 2026 TrackBox System. All rights reserved.</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-medium text-gray-400 mb-1">Developed by:</p>
+                    <p>Jeddha M. Dajab, Wen Saint T. Florito, Saldester P. Lopez, and Radiant Zion R. Madula</p>
+                    <p class="mt-1">Bachelor of Science in Information Technology 3D &bull; February 2026</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

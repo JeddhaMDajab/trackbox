@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 .env
-database.db
+*.db
 uploads/*
 !uploads/.gitkeep
+.vscode/

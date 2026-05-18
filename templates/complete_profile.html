@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Profile - TrackBox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: { fontFamily: { sans: ['Inter', 'sans-serif'], }, colors: { evsuRed: '#800000', evsuRedDark: '#5c0000', evsuGold: '#FFD700', evsuGoldDark: '#e6c200', } }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen text-gray-800">
+    <!-- Navbar -->
+    <header class="bg-evsuRed text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 bg-white rounded-lg border-b-[3px] border-gray-200 shadow-sm">
+                        <svg class="w-[22px] h-[22px] text-evsuRed" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    </div>
+                    <span class="font-extrabold text-2xl tracking-tight text-white drop-shadow-sm">Track<span class="text-evsuGold">Box</span></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-2xl border-t-8 border-t-evsuRed">
+            <div>
+                <h2 class="mt-2 text-center text-3xl font-extrabold text-gray-900">
+                    Almost There!
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    Welcome, {{ user.first_name }}. To finish setting up your account, please enter your remaining institutional details.
+                </p>
+            </div>
+            
+            <form class="mt-6 space-y-6" action="/complete-profile" method="POST">
+                
+                {% if error %}
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+                    <p class="text-sm text-red-700 font-medium">{{ error }}</p>
+                </div>
+                {% endif %}
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="university_id" class="block text-sm font-medium text-gray-700">University ID <span class="text-red-500">*</span></label>
+                        <input id="university_id" name="university_id" type="text" required pattern="^\d{4}-\d{4}$" title="Format: YYYY-NNNN" class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-evsuRed focus:border-evsuRed sm:text-sm mt-1" placeholder="2024-0001">
+                        <p class="text-xs text-gray-500 mt-1">EVSU ID number MUST follow the format (e.g., 2024-0001)</p>
+                    </div>
+                    <div>
+                        <label for="middle_name" class="block text-sm font-medium text-gray-700">Middle Name <span class="text-gray-400 text-xs font-normal">(Optional)</span></label>
+                        <input id="middle_name" name="middle_name" type="text" class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-evsuRed focus:border-evsuRed sm:text-sm mt-1" placeholder="Santos">
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-evsuRed hover:bg-evsuRedDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-evsuRed transition duration-200">
+                        Complete Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
