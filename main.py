@@ -1688,6 +1688,52 @@ async def quick_drop(
         ))
         db.commit()
 
+        # Check for matching lost items reported by students to notify them
+        matching_lost_items = db.query(LostItem).filter(
+            LostItem.category == category,
+            LostItem.type.ilike("LOST"),
+            LostItem.is_archived == False,
+            LostItem.status.in_(["Approved", "Verified", "Active", "Pending", "Potential Match Found"])
+        ).all()
+
+        for lost_item in matching_lost_items:
+            # Case-insensitive substring match
+            if item_name.lower() in lost_item.item_name.lower() or lost_item.item_name.lower() in item_name.lower():
+                # Update status of student's lost report to let them know it's in guard's custody
+                lost_item.status = "IN CUSTODY"
+                
+                # Add system notification for the student
+                db.add(Notification(
+                    recipient=lost_item.reporter,
+                    message=f"Great news! A matching item for your lost report '{lost_item.item_name}' was turned in and is now IN CUSTODY at the '{building}' Guard Station. You can claim it by showing your Claim QR code to the guard!"
+                ))
+                
+                # Send WebSocket notification (Toast Alert)
+                try:
+                    await manager.send_personal_message({
+                        "type": "notification",
+                        "message": f"Great news! Your lost '{lost_item.item_name}' is now IN CUSTODY at the '{building}' Guard Station! 🛡️"
+                    }, lost_item.reporter)
+                except:
+                    pass
+
+                # Email Notification
+                student_user = db.query(User).filter(User.username.ilike(lost_item.reporter)).first()
+                if not student_user:
+                    # Fallback: search by email prefix
+                    student_user = db.query(User).filter(User.email.ilike(f"{lost_item.reporter}@%")).first()
+                
+                if student_user and student_user.email:
+                    try:
+                        send_email_notification(
+                            recipient_email=student_user.email,
+                            subject="Your Lost Item is in Custody!",
+                            message_content=f"Hello {student_user.first_name},\n\nGood news! A matching item for your reported lost item '{lost_item.item_name}' has been recorded and is now in custody at the '{building}' Guard Station.\n\nPlease visit the guard house to claim it using your Claim QR code.\n\nBest regards,\nTrackBox Team"
+                        )
+                    except:
+                        pass
+        db.commit()
+
         return JSONResponse({"success": True, "message": f"Item '{item_name}' successfully recorded as IN CUSTODY."})
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
@@ -1802,10 +1848,12 @@ async def run_matching(db: Session, item_id: int, item_type: str):
     for match in potential_matches:
         if item.item_name.lower() in match.item_name.lower() or match.item_name.lower() in item.item_name.lower():
             item.status = "Potential Match Found"
-            item.matched_with = match.id
-            if not match.matched_with:
-                match.status = "Potential Match Found"
-                match.matched_with = item.id
+            if hasattr(item, 'matched_with'):
+                item.matched_with = match.id
+            if hasattr(match, 'matched_with'):
+                if not match.matched_with:
+                    match.status = "Potential Match Found"
+                    match.matched_with = item.id
             
             db.add(Notification(recipient=reporter, message=f"System Match! A potential match for your '{item.item_name}' was found: '{match.item_name}'. Check your account page!"))
             db.add(Notification(recipient=match.reporter, message=f"System Match! Someone just reported an item that matches your '{match.item_name}'. Check your account page!"))
