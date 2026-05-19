@@ -1782,6 +1782,40 @@ def guard_dashboard(request: Request, db: Session = Depends(get_db)):
         "all_buildings": db.query(Building).all()
     })
 
+
+@app.get("/guard/inventory", response_class=HTMLResponse)
+def guard_inventory_page(request: Request, db: Session = Depends(get_db)):
+    auth_token = request.cookies.get("access_token")
+    if not auth_token:
+        return RedirectResponse("/login")
+    try:
+        username = verify_admin_token(auth_token)
+        user = db.query(User).filter(User.username == username).first()
+    except HTTPException:
+        return RedirectResponse("/login")
+    
+    if user.role != "guard":
+        return RedirectResponse("/login")
+        
+    building_filter = user.assigned_building
+    found_q = db.query(FoundItem).filter(FoundItem.is_claimed == False)
+    if building_filter:
+        found_q = found_q.filter(FoundItem.building == building_filter)
+    found_count = found_q.count()
+
+    response = templates.TemplateResponse("guard_inventory.html", {
+        "request": request,
+        "token": auth_token,
+        "user": user,
+        "found_count": found_count,
+        "assigned_building": building_filter
+    })
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
 @app.post("/guard/quick-drop")
 async def quick_drop(
     request: Request,
