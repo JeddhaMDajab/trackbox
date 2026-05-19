@@ -316,7 +316,25 @@ def send_email_notification(recipient_email, subject, message_content):
             server.quit()
             print(f"--- REAL EMAIL SENT TO {recipient_email} ---")
         except Exception as e:
-            print(f"--- FAILED TO SEND EMAIL TO {recipient_email}: {e} ---")
+            error_msg = f"--- FAILED TO SEND EMAIL TO {recipient_email}: {e} ---"
+            print(error_msg)
+            # Log failure to database Notification so admin/user can see it instantly
+            try:
+                db_session = SessionLocal()
+                # Find username associated with this email to notify them
+                user_record = db_session.query(User).filter(User.email == recipient_email).first()
+                target_user = user_record.username if user_record else recipient_email
+                
+                notif = Notification(
+                    recipient=target_user,
+                    message=f"⚠️ SMTP EMAIL FAILURE: Failed to send update email to {recipient_email}. Error: {str(e)}",
+                    created_at=get_ph_time()
+                )
+                db_session.add(notif)
+                db_session.commit()
+                db_session.close()
+            except Exception as db_err:
+                print(f"Failed to log email error to database: {db_err}")
 
     threading.Thread(target=send_smtp, daemon=True).start()
 
