@@ -364,9 +364,9 @@
                         <span class="stat-value" style="color: var(--success); font-size: 1.1rem;"><i class="fas fa-check-circle"></i> Online</span>
                     </div>
                 </div>
-                <div class="stat-item">
+                <div class="stat-item" onclick="scrollToInventory()" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.04)';" onmouseout="this.style.transform='scale(1)';">
                     <div class="stat-info">
-                        <span class="stat-label">In Custody</span>
+                        <span class="stat-label" style="display: flex; align-items: center; gap: 6px;">In Custody <i class="fas fa-arrow-down" style="font-size: 0.75rem; color: var(--accent);"></i></span>
                         <span class="stat-value">{{ found_count }}</span>
                     </div>
                 </div>
@@ -380,7 +380,7 @@
         </aside>
         
         <!-- BUILDING INVENTORY SECTION (US-03) -->
-        <section class="card full-width-card" style="margin-top: 30px;">
+        <section id="buildingInventorySection" class="card full-width-card" style="margin-top: 30px;">
             <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <i class="fas fa-boxes" style="color: var(--accent);"></i>
@@ -807,6 +807,19 @@
             setTimeout(() => {
                 lightbox.style.display = 'none';
             }, 150);
+        }
+
+        function scrollToInventory() {
+            const section = document.getElementById('buildingInventorySection');
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth' });
+                // Briefly flash the section border to highlight it beautifully
+                section.style.transition = 'box-shadow 0.3s ease';
+                section.style.boxShadow = '0 0 0 4px rgba(128, 0, 0, 0.25)';
+                setTimeout(() => {
+                    section.style.boxShadow = 'none';
+                }, 1000);
+            }
         }
 
         // Initialize inventory fetch
