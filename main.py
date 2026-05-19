@@ -1388,35 +1388,48 @@ def get_all_items(token: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
     building_filter = user.assigned_building if (user and user.role == "guard") else None
 
-    # Get LOST items from lost_items table
-    lost_q = db.query(LostItem).filter(
-        LostItem.is_archived == False,
-        LostItem.type == "LOST"
-    )
-    if building_filter:
-        lost_q = lost_q.filter(LostItem.building == building_filter)
-    lost_items = lost_q.order_by(LostItem.created_at.desc()).all()
-    
-    # Get FOUND items from found_items table
-    found_q = db.query(FoundItem).filter(FoundItem.is_archived == False)
-    if building_filter:
-        found_q = found_q.filter(FoundItem.building == building_filter)
-    found_items = found_q.order_by(FoundItem.created_at.desc()).all()
-    
-    # Get FOUND items from lost_items table (unified reporting)
-    # Include peer-to-peer items even if archived for admin visibility
-    found_lost_q = db.query(LostItem).filter(
-        LostItem.type == "FOUND"
-    )
-    if building_filter:
-        found_lost_q = found_lost_q.filter(LostItem.building == building_filter)
-    found_in_lost_table = found_lost_q.order_by(LostItem.created_at.desc()).all()
-    
-    # Filter: show non-archived OR peer-to-peer claimed items
-    found_in_lost_table = [
-        item for item in found_in_lost_table 
-        if not item.is_archived or "Peer-to-Peer" in (item.status or "")
-    ]
+    if user and user.role == "guard":
+        # Guards should only see active, unclaimed items that are strictly in custody
+        found_q = db.query(FoundItem).filter(
+            FoundItem.is_archived == False,
+            FoundItem.is_claimed == False,
+            FoundItem.status == "IN CUSTODY"
+        )
+        if building_filter:
+            found_q = found_q.filter(FoundItem.building == building_filter)
+        found_items = found_q.order_by(FoundItem.created_at.desc()).all()
+        lost_items = []
+        found_in_lost_table = []
+    else:
+        # Get LOST items from lost_items table
+        lost_q = db.query(LostItem).filter(
+            LostItem.is_archived == False,
+            LostItem.type == "LOST"
+        )
+        if building_filter:
+            lost_q = lost_q.filter(LostItem.building == building_filter)
+        lost_items = lost_q.order_by(LostItem.created_at.desc()).all()
+        
+        # Get FOUND items from found_items table
+        found_q = db.query(FoundItem).filter(FoundItem.is_archived == False)
+        if building_filter:
+            found_q = found_q.filter(FoundItem.building == building_filter)
+        found_items = found_q.order_by(FoundItem.created_at.desc()).all()
+        
+        # Get FOUND items from lost_items table (unified reporting)
+        # Include peer-to-peer items even if archived for admin visibility
+        found_lost_q = db.query(LostItem).filter(
+            LostItem.type == "FOUND"
+        )
+        if building_filter:
+            found_lost_q = found_lost_q.filter(LostItem.building == building_filter)
+        found_in_lost_table = found_lost_q.order_by(LostItem.created_at.desc()).all()
+        
+        # Filter: show non-archived OR peer-to-peer claimed items
+        found_in_lost_table = [
+            item for item in found_in_lost_table 
+            if not item.is_archived or "Peer-to-Peer" in (item.status or "")
+        ]
 
     all_items = []
     
