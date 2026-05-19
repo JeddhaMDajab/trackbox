@@ -1132,7 +1132,12 @@ def user_account(request: Request, db: Session = Depends(get_db)):
 
         # Normalize status
         if post_data["status"] == "Completed" or is_returned:
-            post_data["status"] = "RETURNED (PEER TO PEER)"
+            method = (post_data.get("handover_method") or "").upper()
+            by = (post_data.get("handed_over_by") or "").upper()
+            if "SCANNER" in method or "GUARD" in by or "ADMIN" in by or "SECURITY" in by:
+                post_data["status"] = "RETURNED (VIA SECURITY)"
+            else:
+                post_data["status"] = "RETURNED (PEER TO PEER)"
 
         if is_returned:
             completed_posts.append(post_data)
@@ -1163,7 +1168,12 @@ def user_account(request: Request, db: Session = Depends(get_db)):
 
         # Normalize status
         if post_data["status"] == "Completed" or is_returned:
-            post_data["status"] = "RETURNED (PEER TO PEER)"
+            method = (post_data.get("handover_method") or "").upper()
+            by = (post_data.get("handed_over_by") or "").upper()
+            if "SCANNER" in method or "GUARD" in by or "ADMIN" in by or "SECURITY" in by:
+                post_data["status"] = "RETURNED (VIA SECURITY)"
+            else:
+                post_data["status"] = "RETURNED (PEER TO PEER)"
 
         if is_returned:
             completed_posts.append(post_data)
@@ -1969,14 +1979,14 @@ async def quick_drop(
             # Add system notification for the student
             db.add(Notification(
                 recipient=lost_item.reporter,
-                message=f"Great news! A matching item for your lost report '{lost_item.item_name}' was turned in and is now IN CUSTODY at the '{building}' Guard Station. You can claim it by showing your Claim QR code to the guard!"
+                message=f"Great news! A matching item for your lost report '{lost_item.item_name}' was turned in and is now IN CUSTODY at the Guard House (Main Entrance) [Found in: {building}]. You can claim it by showing your Claim QR code to the guard!"
             ))
             
             # Send WebSocket notification (Toast Alert)
             try:
                 await manager.send_personal_message({
                     "type": "notification",
-                    "message": f"Great news! Your lost '{lost_item.item_name}' is now IN CUSTODY at the '{building}' Guard Station! 🛡️"
+                    "message": f"Great news! Your lost '{lost_item.item_name}' is now IN CUSTODY at the Guard House (Main Entrance)! 🛡️"
                 }, lost_item.reporter)
             except:
                 pass
@@ -1992,7 +2002,7 @@ async def quick_drop(
                     send_email_notification(
                         recipient_email=student_user.email,
                         subject="Your Lost Item is in Custody!",
-                        message_content=f"Hello {student_user.first_name},\n\nGood news! A matching item for your reported lost item '{lost_item.item_name}' has been recorded and is now in custody at the '{building}' Guard Station.\n\nPlease visit the guard house to claim it using your Claim QR code.\n\nBest regards,\nTrackBox Team"
+                        message_content=f"Hello {student_user.first_name},\n\nGood news! A matching item for your reported lost item '{lost_item.item_name}' has been recorded and is now in custody at the Guard House (Main Entrance) [Found in: {building}].\n\nPlease visit the Guard House (Main Entrance) to claim it using your Claim QR code.\n\nBest regards,\nTrackBox Team"
                     )
                 except:
                     pass
@@ -2445,28 +2455,53 @@ async def mark_item_claimed(
         auth_token = token or request.cookies.get("access_token")
         if not auth_token:
             return JSONResponse({"success": False, "message": "Unauthorized"}, status_code=401)
-        verify_admin_token(auth_token)
+        username = verify_admin_token(auth_token)
+        user = db.query(User).filter(User.username == username).first()
     except Exception:
         return JSONResponse({"success": False, "message": "Unauthorized"}, status_code=401)
+
+    # Determine handed_over_by and handover_method dynamically
+    handed_by = "Admin Office"
+    method = "Admin Scanner"
+    if user and user.role == "guard":
+        handed_by = "Guard House (Main Entrance)"
+        method = "Guard Scanner"
 
     item = db.query(FoundItem).filter(FoundItem.id == item_id).first()
     if not item:
         # Fallback to LostItem if not in FoundItem
         item = db.query(LostItem).filter(LostItem.id == item_id).first()
         if item:
-            # For LostItem, we mark it by moving it to FoundItem and immediately claiming it, 
-            # or just deleting it. Since we want a 'Returned' record, we move it to FoundItem first.
+            # Mark matching FoundItem or LostItem in database as claimed as well!
+            if item.matched_with:
+                matching_found = db.query(FoundItem).filter(FoundItem.id == item.matched_with).first()
+                if matching_found:
+                    matching_found.is_claimed = True
+                    matching_found.status = "RETURNED TO OWNER"
+                    matching_found.handed_over_by = handed_by
+                    matching_found.handover_method = method
+                    matching_found.claimed_at = get_ph_time()
+                else:
+                    matching_lost = db.query(LostItem).filter(LostItem.id == item.matched_with).first()
+                    if matching_lost:
+                        matching_lost.status = "RETURNED TO OWNER"
+                        matching_lost.is_archived = True
+                        matching_lost.handed_over_by = handed_by
+                        matching_lost.handover_method = method
+                        matching_lost.claimed_at = get_ph_time()
+
             new_found = FoundItem(
                 reporter=item.reporter,
                 category=item.category,
                 item_name=item.item_name,
                 description=item.description,
                 found_in="Directly Returned via Scanner",
+                building=item.building,
                 image=item.image,
                 is_claimed=True,
                 status="RETURNED TO OWNER",
-                handed_over_by="Admin Office",
-                handover_method="Admin Scanner",
+                handed_over_by=handed_by,
+                handover_method=method,
                 claimed_at=get_ph_time(),
                 created_at=get_ph_time()
             )
@@ -2476,10 +2511,19 @@ async def mark_item_claimed(
             db.refresh(new_found)
             item = new_found # Use the new record for notification
     else:
+        # Mark matching LostItem in database as claimed as well
+        matching_lost = db.query(LostItem).filter(LostItem.matched_with == item.id).first()
+        if matching_lost:
+            matching_lost.status = "RETURNED TO OWNER"
+            matching_lost.is_archived = True
+            matching_lost.handed_over_by = handed_by
+            matching_lost.handover_method = method
+            matching_lost.claimed_at = get_ph_time()
+
         item.is_claimed = True
         item.status = "RETURNED TO OWNER"
-        item.handed_over_by = "Admin Office"
-        item.handover_method = "Admin Scanner"
+        item.handed_over_by = handed_by
+        item.handover_method = method
         item.claimed_at = get_ph_time()
         db.commit()  # Commit the status change immediately
     
