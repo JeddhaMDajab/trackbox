@@ -672,9 +672,25 @@
             });
         }
 
-        function toggleNotif() {
+        async function toggleNotif() {
             const dropdown = document.getElementById('notifDropdown');
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            const isOpening = dropdown.style.display !== 'block';
+            dropdown.style.display = isOpening ? 'block' : 'none';
+            
+            if (isOpening) {
+                // Instantly remove the red badge from the screen
+                const badge = document.querySelector('.notif-badge');
+                if (badge) {
+                    badge.remove();
+                }
+                
+                // Call backend API to mark as read
+                try {
+                    await fetch('/notifications/mark-read', { method: 'POST' });
+                } catch (err) {
+                    console.error("Failed to mark notifications as read:", err);
+                }
+            }
         }
 
         function toggleSidebar() {
