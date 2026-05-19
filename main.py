@@ -1476,10 +1476,15 @@ async def approve_item(item_type: str, item_id: int, token: str = Form(...), db:
     except:
         return JSONResponse({"success": False, "message": "Unauthorized"}, status_code=401)
     
+    item = None
     if item_type == "lost":
         item = db.query(LostItem).filter(LostItem.id == item_id).first()
+        if not item:
+            item = db.query(FoundItem).filter(FoundItem.id == item_id).first()
     else:
         item = db.query(FoundItem).filter(FoundItem.id == item_id).first()
+        if not item:
+            item = db.query(LostItem).filter(LostItem.id == item_id).first()
         
     if not item:
         return JSONResponse({"success": False, "message": "Item not found"})
@@ -1699,10 +1704,15 @@ async def report_lost(
 
 async def run_matching(db: Session, item_id: int, item_type: str):
     """Utility to run matching process after an item is approved."""
+    item = None
     if item_type == "lost":
         item = db.query(LostItem).filter(LostItem.id == item_id).first()
+        if not item:
+            item = db.query(FoundItem).filter(FoundItem.id == item_id).first()
     else:
         item = db.query(FoundItem).filter(FoundItem.id == item_id).first()
+        if not item:
+            item = db.query(LostItem).filter(LostItem.id == item_id).first()
         
     if not item: return
 
