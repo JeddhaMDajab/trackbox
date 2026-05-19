@@ -2721,6 +2721,31 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
         while True:
             data = await websocket.receive_json()
             receiver = data.get("receiver")
+            chat_id = data.get("chat_id")
+            text = data.get("text")
+            
+            # Save to Database if valid message
+            if receiver and chat_id and text:
+                db = SessionLocal()
+                try:
+                    msg = Message(
+                        sender=username,
+                        receiver=receiver,
+                        content=text,
+                        item_id=int(chat_id)
+                    )
+                    db.add(msg)
+                    db.add(Notification(
+                        recipient=receiver,
+                        message=f"New chat message from {username}: '{text[:30]}...'"
+                    ))
+                    db.commit()
+                except Exception as e:
+                    print(f"Error saving websocket chat message: {e}")
+                    db.rollback()
+                finally:
+                    db.close()
+            
             if receiver:
                 await manager.send_personal_message(data, receiver)
     except WebSocketDisconnect:

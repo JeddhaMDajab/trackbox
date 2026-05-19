@@ -511,15 +511,10 @@
         let socket = null;
         const currentUsername = "{{ user.username }}";
 
-        function openChat(chatId, matchedUser) {
-            currentChatId = chatId;
-            document.getElementById('chat-user-name').innerText = matchedUser;
-            document.getElementById('chat-user-img').src = `https://ui-avatars.com/api/?name=${matchedUser}&background=fff&color=800000`;
-            document.getElementById('chat-modal').style.display = 'flex';
-            document.getElementById('chat-messages').innerHTML = ''; // Clear previous
-
-            // Initialize WebSocket
-            if (socket) socket.close();
+        function connectWebSocket() {
+            if (socket) {
+                try { socket.close(); } catch(e){}
+            }
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             socket = new WebSocket(`${protocol}//${window.location.host}/ws/${currentUsername}`);
             
@@ -527,19 +522,74 @@
                 const data = JSON.parse(event.data);
                 if (data.chat_id == currentChatId) {
                     appendMessage(data.sender, data.text, data.time);
+                } else {
+                    // Show a toast or notification if message is for us but chat modal isn't open for it
+                    Swal.fire({
+                        title: `New message from ${data.sender}`,
+                        text: data.text,
+                        icon: 'info',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 4000
+                    });
                 }
             };
+
+            socket.onclose = function(e) {
+                console.log("WebSocket closed. Reconnecting in 3 seconds...");
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            socket.onerror = function(err) {
+                console.error("WebSocket error:", err);
+                socket.close();
+            };
+        }
+
+        // Initialize WebSocket on page load
+        connectWebSocket();
+
+        function openChat(chatId, matchedUser) {
+            currentChatId = chatId;
+            document.getElementById('chat-user-name').innerText = matchedUser;
+            document.getElementById('chat-user-img').src = `https://ui-avatars.com/api/?name=${matchedUser}&background=fff&color=800000`;
+            document.getElementById('chat-modal').style.display = 'flex';
+            document.getElementById('chat-messages').innerHTML = ''; // Clear previous
+
+            // Fetch and load chat history
+            fetch(`/messages/${chatId}`)
+                .then(res => res.json())
+                .then(messages => {
+                    messages.forEach(msg => {
+                        let timeStr = "";
+                        if (msg.created_at) {
+                            try {
+                                const d = new Date(msg.created_at);
+                                timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            } catch(e) {
+                                timeStr = msg.created_at;
+                            }
+                        }
+                        appendMessage(msg.sender, msg.content, timeStr);
+                    });
+                })
+                .catch(err => console.error("Error loading chat history:", err));
+
+            // Ensure WebSocket is connected
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                connectWebSocket();
+            }
         }
 
         function closeChat() {
             document.getElementById('chat-modal').style.display = 'none';
-            if (socket) socket.close();
         }
 
         function sendMessage() {
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
-            if (text && socket) {
+            if (text && socket && socket.readyState === WebSocket.OPEN) {
                 const msg = {
                     chat_id: currentChatId,
                     sender: currentUsername,
@@ -552,6 +602,18 @@
                 input.value = '';
             }
         }
+
+        // Send message on Enter keypress
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputField = document.getElementById('chat-input');
+            if (inputField) {
+                inputField.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        sendMessage();
+                    }
+                });
+            }
+        });
 
         function appendMessage(sender, text, time) {
             const container = document.getElementById('chat-messages');
