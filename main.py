@@ -1299,9 +1299,15 @@ def delete_item(item_id: int, token: str, table: Optional[str] = None, db: Sessi
             if "@" in item.reporter:
                 recipient_email = item.reporter
             else:
-                user = db.query(User).filter(User.username == item.reporter).first()
+                # Case-insensitive query
+                user = db.query(User).filter(User.username.ilike(item.reporter)).first()
                 if user:
                     recipient_email = user.email
+                else:
+                    # Fallback: search by email prefix (starts with username)
+                    user = db.query(User).filter(User.email.ilike(f"{item.reporter}@%")).first()
+                    if user:
+                        recipient_email = user.email
             
             if recipient_email:
                 subject = f"TrackBox EVSU - Item Report Rejected"
@@ -1318,6 +1324,15 @@ Thank you,
 TrackBox Administration
 Eastern Visayas State University"""
                 send_email_notification(recipient_email, subject, message_content)
+            else:
+                # Log diagnostic warning so we know exactly why no email was sent
+                warning_notif = Notification(
+                    recipient=item.reporter,
+                    message=f"⚠️ SMTP EMAIL WARNING: Could not find email address for reporter '{item.reporter}' in our records. No rejection email was sent.",
+                    created_at=get_ph_time()
+                )
+                db.add(warning_notif)
+                db.commit()
     except Exception as email_err:
         print(f"Failed to send rejection email: {email_err}")
 
@@ -1762,7 +1777,11 @@ async def run_matching(db: Session, item_id: int, item_type: str):
             await manager.send_personal_message({"type": "notification", "message": f"System Match! A potential match for your '{match.item_name}' was just reported! 🛡️"}, match.reporter)
             
             # Email Notification
-            reporter_user = db.query(User).filter(User.username == match.reporter).first()
+            reporter_user = db.query(User).filter(User.username.ilike(match.reporter)).first()
+            if not reporter_user:
+                # Fallback: search by email prefix
+                reporter_user = db.query(User).filter(User.email.ilike(f"{match.reporter}@%")).first()
+            
             if reporter_user and reporter_user.email:
                 try:
                     send_email_notification(
