@@ -401,12 +401,19 @@ def home(request: Request):
     if token:
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            if payload["role"] == "admin":
-                return RedirectResponse("/admin/dashboard")
-            elif payload["role"] == "guard":
-                return RedirectResponse("/guard/dashboard")
-            else:
-                return RedirectResponse("/student/dashboard")
+            username = payload.get("sub")
+            db = SessionLocal()
+            try:
+                user = db.query(User).filter(User.username == username).first()
+                if user and user.is_active:
+                    if payload["role"] == "admin":
+                        return RedirectResponse("/admin/dashboard")
+                    elif payload["role"] == "guard":
+                        return RedirectResponse("/guard/dashboard")
+                    else:
+                        return RedirectResponse("/student/dashboard")
+            finally:
+                db.close()
         except:
             pass
     return templates.TemplateResponse("home.html", {"request": request})
@@ -490,6 +497,9 @@ async def auth_google(request: Request, db: Session = Depends(get_db)):
         # Check if user exists
         user = db.query(User).filter(User.email == email).first()
         
+        if user and not user.is_active:
+            return HTMLResponse("<h2>Account Deactivated</h2><p>Your account has been deactivated. Please contact the administrator.</p><a href='/login'>Back to Login</a>", status_code=403)
+
         if not user:
             # Create new user if not exists
             # We generate a random username if not available, or use the email prefix
@@ -914,6 +924,8 @@ def get_current_user(request: Request, db: Session):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
         user = db.query(User).filter(User.username == username).first()
+        if user and not user.is_active:
+            return None
         return user
     except:
         return None
@@ -1142,7 +1154,18 @@ def verify_admin_token(token: str):
         role = payload.get("role")
         if role not in ["admin", "guard"]:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
-        return payload.get("sub")
+        
+        # Verify user is active in database
+        username = payload.get("sub")
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.username == username).first()
+            if not user or not user.is_active:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized or deactivated")
+        finally:
+            db.close()
+            
+        return username
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
     except jwt.InvalidTokenError:
