@@ -1975,6 +1975,7 @@ async def quick_drop(
         for lost_item in unique_matching:
             # Update status of student's lost report to let them know it's in guard's custody
             lost_item.status = "IN CUSTODY"
+            lost_item.matched_with = new_item.id
                 
             # Add system notification for the student
             db.add(Notification(
@@ -2489,6 +2490,19 @@ async def mark_item_claimed(
                         matching_lost.handed_over_by = handed_by
                         matching_lost.handover_method = method
                         matching_lost.claimed_at = get_ph_time()
+            else:
+                # Fallback: if matched_with is None, search for a matching non-claimed FoundItem with the same name and category
+                matching_found = db.query(FoundItem).filter(
+                    FoundItem.item_name.ilike(item.item_name),
+                    FoundItem.category == item.category,
+                    FoundItem.is_claimed == False
+                ).first()
+                if matching_found:
+                    matching_found.is_claimed = True
+                    matching_found.status = "RETURNED TO OWNER"
+                    matching_found.handed_over_by = handed_by
+                    matching_found.handover_method = method
+                    matching_found.claimed_at = get_ph_time()
 
             new_found = FoundItem(
                 reporter=item.reporter,
@@ -2512,7 +2526,10 @@ async def mark_item_claimed(
             item = new_found # Use the new record for notification
     else:
         # Mark matching LostItem in database as claimed as well
-        matching_lost = db.query(LostItem).filter(LostItem.matched_with == item.id).first()
+        matching_lost = db.query(LostItem).filter(
+            (LostItem.matched_with == item.id) | 
+            (LostItem.item_name.ilike(item.item_name) & (LostItem.category == item.category) & (LostItem.status == "IN CUSTODY"))
+        ).first()
         if matching_lost:
             matching_lost.status = "RETURNED TO OWNER"
             matching_lost.is_archived = True
