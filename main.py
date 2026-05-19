@@ -288,30 +288,34 @@ def calculate_image_similarity(img1_path, img2_path):
     except:
         return 0
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import threading
 
 def send_email_notification(recipient_email, subject, message_content):
     """
-    Real Email Notification using SMTP. 
+    Real Email Notification using SMTP (Runs in a background thread to prevent blocking). 
     """
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = MAIL_FROM
-        msg['To'] = recipient_email
-        msg['Subject'] = subject
-        
-        msg.attach(MIMEText(message_content, 'plain'))
-        
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()  # Secure the connection
-        server.login(SMTP_USER, SMTP_PASS)
-        server.send_message(msg)
-        server.quit()
-        print(f"--- REAL EMAIL SENT TO {recipient_email} ---")
-    except Exception as e:
-        print(f"--- FAILED TO SEND EMAIL TO {recipient_email}: {e} ---")
+    def send_smtp():
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = MAIL_FROM
+            msg['To'] = recipient_email
+            msg['Subject'] = subject
+            
+            msg.attach(MIMEText(message_content, 'plain'))
+            
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.starttls()  # Secure the connection
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+            server.quit()
+            print(f"--- REAL EMAIL SENT TO {recipient_email} ---")
+        except Exception as e:
+            print(f"--- FAILED TO SEND EMAIL TO {recipient_email}: {e} ---")
+
+    threading.Thread(target=send_smtp, daemon=True).start()
 
 def archive_old_reports(db: Session):
     # Archive items older than 30 days

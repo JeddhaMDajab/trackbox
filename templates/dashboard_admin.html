@@ -583,27 +583,57 @@
         }
 
         async function approveItem(type, id) {
-            const fd = new FormData(); fd.append('token', token);
-            const res = await fetch(`/admin/approve-item/${type}/${id}`, { method: 'POST', body: fd });
-            const data = await res.json();
-            if (data.success) {
-                Swal.fire({ icon: 'success', title: 'Verified', text: data.message, timer: 1500 });
-                loadVerificationQueue();
-            }
+            Swal.fire({
+                title: 'Approve Report?',
+                text: "Do you want to approve this item and run matching checks?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                confirmButtonText: 'Yes, Approve',
+                showLoaderOnConfirm: true,
+                preConfirm: async () => {
+                    try {
+                        const fd = new FormData();
+                        fd.append('token', token);
+                        const res = await fetch(`/admin/approve-item/${type}/${id}`, { method: 'POST', body: fd });
+                        if (!res.ok) throw new Error('Approve failed');
+                        return await res.json();
+                    } catch (error) {
+                        Swal.showValidationMessage(`Error: ${error}`);
+                    }
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed && result.value?.success) {
+                    Swal.fire({ icon: 'success', title: 'Verified', text: result.value.message, timer: 1500 });
+                    loadVerificationQueue();
+                }
+            });
         }
 
         async function rejectItem(type, id) {
             Swal.fire({
                 title: 'Reject Report?',
-                text: "Are you sure you want to delete this report? This action cannot be undone.",
+                text: "Are you sure you want to reject this report? This action cannot be undone.",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
-                confirmButtonText: 'Yes, Reject'
-            }).then(async (result) => {
+                confirmButtonText: 'Yes, Reject',
+                showLoaderOnConfirm: true,
+                preConfirm: async () => {
+                    try {
+                        const res = await fetch(`/admin/delete/${id}?token=${token}&table=${type==='lost'?'lost':'found'}`, { method: "DELETE" });
+                        if (!res.ok) throw new Error('Deletion failed');
+                        return await res.json();
+                    } catch (error) {
+                        Swal.showValidationMessage(`Error: ${error}`);
+                    }
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
                 if (result.isConfirmed) {
-                    const res = await fetch(`/admin/delete/${id}?token=${token}&table=${type==='lost'?'lost':'found'}`, { method: "DELETE" });
-                    if (res.ok) { Swal.fire('Rejected', 'Report has been removed.', 'success'); loadVerificationQueue(); }
+                    Swal.fire('Rejected', 'Report has been removed.', 'success');
+                    loadVerificationQueue();
                 }
             });
         }
