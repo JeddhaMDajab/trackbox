@@ -3248,3 +3248,15 @@ async def mark_as_found_user(
         db.commit()
         
     return RedirectResponse("/user_account", status_code=303)
+
+@app.get("/admin/reset-database")
+def reset_database(db: Session = Depends(get_db)):
+    try:
+        db.query(LostItem).delete()
+        db.query(FoundItem).delete()
+        db.query(Notification).delete()
+        db.query(Message).delete()
+        db.commit()
+        return HTMLResponse("<h1>Database Reset Successful!</h1><p>All items, notifications, and messages have been cleared. User accounts and buildings were preserved.</p><a href='/login'>Go to Login</a>")
+    except Exception as e:
+        return HTMLResponse(f"<h1>Reset Failed</h1><p>{str(e)}</p>")
