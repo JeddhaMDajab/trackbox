@@ -577,12 +577,11 @@
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; color:var(--text-muted);"><i class="fas fa-check-circle" style="display:block; font-size:2rem; margin-bottom:10px; color:#10b981;"></i>All reports verified!</td></tr>';
                     return;
                 }
-                
                 tbody.innerHTML = pending.map(i => `
                     <tr style="border-bottom: 1px solid #f8fafc;">
                         <td style="padding: 15px;">
                             <div style="display:flex; align-items:center; gap:10px;">
-                                ${i.image ? `<img src="/uploads/${i.image}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">` : `<div style="width:40px; height:40px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#cbd5e1;"><i class="fas fa-image"></i></div>`}
+                                ${i.image ? `<img src="/uploads/${i.image}" onclick="zoomImage(this.src, '${i.item_name}')" style="width:40px; height:40px; border-radius:8px; object-fit:cover; cursor:zoom-in; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">` : `<div style="width:40px; height:40px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#cbd5e1;"><i class="fas fa-image"></i></div>`}
                                 <div style="font-weight:700;">${i.item_name}</div>
                             </div>
                         </td>
@@ -845,6 +844,99 @@
                 if (dropdown) dropdown.style.display = 'none';
             }
         });
+        function zoomImage(src, alt = "Image Preview") {
+            let modal = document.getElementById('global-image-lightbox');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'global-image-lightbox';
+                modal.style.cssText = `
+                    position: fixed;
+                    inset: 0;
+                    z-index: 99999;
+                    background: rgba(0, 0, 0, 0.85);
+                    backdrop-filter: blur(8px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                    cursor: zoom-out;
+                `;
+                
+                const container = document.createElement('div');
+                container.style.cssText = `
+                    position: relative;
+                    max-width: 90vw;
+                    max-height: 90vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transform: scale(0.9);
+                    transition: transform 0.3s ease;
+                `;
+                
+                const img = document.createElement('img');
+                img.id = 'global-image-lightbox-img';
+                img.style.cssText = `
+                    max-width: 100%;
+                    max-height: 90vh;
+                    border-radius: 16px;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                    border: 2px solid rgba(255, 255, 255, 0.1);
+                `;
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                closeBtn.style.cssText = `
+                    position: absolute;
+                    top: -50px;
+                    right: 0;
+                    background: rgba(255, 255, 255, 0.15);
+                    border: none;
+                    color: white;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.2rem;
+                    transition: background 0.2s;
+                    backdrop-filter: blur(4px);
+                `;
+                closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255, 255, 255, 0.3)';
+                closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255, 255, 255, 0.15)';
+                
+                container.appendChild(img);
+                container.appendChild(closeBtn);
+                modal.appendChild(container);
+                document.body.appendChild(modal);
+                
+                const closeModal = () => {
+                    modal.style.opacity = '0';
+                    container.style.transform = 'scale(0.9)';
+                    setTimeout(() => {
+                        modal.style.display = 'none';
+                    }, 300);
+                };
+                
+                modal.onclick = closeModal;
+                closeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    closeModal();
+                };
+            }
+            
+            const imgEl = document.getElementById('global-image-lightbox-img');
+            imgEl.src = src;
+            imgEl.alt = alt;
+            
+            modal.style.display = 'flex';
+            modal.offsetHeight; // force reflow
+            modal.style.opacity = '1';
+            modal.querySelector('div').style.transform = 'scale(1)';
+        }
 
         // Lock navigation
         (function() { history.pushState(null, null, location.href); window.onpopstate = () => history.pushState(null, null, location.href); })();
