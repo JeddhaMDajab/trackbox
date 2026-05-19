@@ -1919,18 +1919,42 @@ async def quick_drop(
         db.commit()
 
         # Check for matching lost items reported by students to notify them
-        matching_lost_items = db.query(LostItem).filter(
+        # 1. Matches in the same category
+        matching_lost_items_same_cat = db.query(LostItem).filter(
             LostItem.category == category,
             LostItem.type.ilike("LOST"),
             LostItem.is_archived == False,
             LostItem.status.in_(["Approved", "Verified", "Active", "Pending", "Potential Match Found"])
         ).all()
 
-        for lost_item in matching_lost_items:
-            # Case-insensitive substring match
+        # 2. Matches with exact same name regardless of category (robust fallback)
+        matching_lost_items_diff_cat = db.query(LostItem).filter(
+            LostItem.category != category,
+            LostItem.type.ilike("LOST"),
+            LostItem.is_archived == False,
+            LostItem.status.in_(["Approved", "Verified", "Active", "Pending", "Potential Match Found"])
+        ).all()
+
+        all_matching = []
+        for lost_item in matching_lost_items_same_cat:
             if item_name.lower() in lost_item.item_name.lower() or lost_item.item_name.lower() in item_name.lower():
-                # Update status of student's lost report to let them know it's in guard's custody
-                lost_item.status = "IN CUSTODY"
+                all_matching.append(lost_item)
+
+        for lost_item in matching_lost_items_diff_cat:
+            if item_name.lower() == lost_item.item_name.lower().strip():
+                all_matching.append(lost_item)
+
+        # De-duplicate
+        unique_matching = []
+        seen_ids = set()
+        for item in all_matching:
+            if item.id not in seen_ids:
+                seen_ids.add(item.id)
+                unique_matching.append(item)
+
+        for lost_item in unique_matching:
+            # Update status of student's lost report to let them know it's in guard's custody
+            lost_item.status = "IN CUSTODY"
                 
                 # Add system notification for the student
                 db.add(Notification(
