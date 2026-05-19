@@ -1380,24 +1380,37 @@ def admin_found_items(request: Request, token: Optional[str] = None, db: Session
 @app.get("/items/all")
 def get_all_items(token: str, db: Session = Depends(get_db)):
     try:
-        verify_admin_token(token)
+        username = verify_admin_token(token)
     except HTTPException as e:
         return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
 
+    # Fetch user to check role and assigned building
+    user = db.query(User).filter(User.username == username).first()
+    building_filter = user.assigned_building if (user and user.role == "guard") else None
+
     # Get LOST items from lost_items table
-    lost_items = db.query(LostItem).filter(
+    lost_q = db.query(LostItem).filter(
         LostItem.is_archived == False,
         LostItem.type == "LOST"
-    ).order_by(LostItem.created_at.desc()).all()
+    )
+    if building_filter:
+        lost_q = lost_q.filter(LostItem.building == building_filter)
+    lost_items = lost_q.order_by(LostItem.created_at.desc()).all()
     
     # Get FOUND items from found_items table
-    found_items = db.query(FoundItem).filter(FoundItem.is_archived == False).order_by(FoundItem.created_at.desc()).all()
+    found_q = db.query(FoundItem).filter(FoundItem.is_archived == False)
+    if building_filter:
+        found_q = found_q.filter(FoundItem.building == building_filter)
+    found_items = found_q.order_by(FoundItem.created_at.desc()).all()
     
     # Get FOUND items from lost_items table (unified reporting)
     # Include peer-to-peer items even if archived for admin visibility
-    found_in_lost_table = db.query(LostItem).filter(
+    found_lost_q = db.query(LostItem).filter(
         LostItem.type == "FOUND"
-    ).order_by(LostItem.created_at.desc()).all()
+    )
+    if building_filter:
+        found_lost_q = found_lost_q.filter(LostItem.building == building_filter)
+    found_in_lost_table = found_lost_q.order_by(LostItem.created_at.desc()).all()
     
     # Filter: show non-archived OR peer-to-peer claimed items
     found_in_lost_table = [
