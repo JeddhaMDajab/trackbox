@@ -639,12 +639,14 @@
                     <td><i class="fas fa-map-marker-alt" style="color: var(--primary); margin-right: 5px;"></i> {{ item.last_seen or "N/A" }}</td>
                     <td>{{ item.created_at.strftime('%b %d, %Y') }}</td>
                     <td>
-                        {% if item.status == "Found" %}
-                        <span class="status-badge status-found">Found</span>
-                        {% elif item.status == "Lost" %}
-                        <span class="status-badge status-lost">Lost</span>
-                        {% else %}
+                        {% if item.status == "Pending" %}
                         <span class="status-badge status-pending">Pending</span>
+                        {% elif item.type and item.type.upper() == "LOST" %}
+                        <span class="status-badge status-lost">Lost</span>
+                        {% elif item.type and item.type.upper() == "FOUND" %}
+                        <span class="status-badge status-found">Found</span>
+                        {% else %}
+                        <span class="status-badge status-pending">{{ item.status }}</span>
                         {% endif %}
                     </td>
                 </tr>

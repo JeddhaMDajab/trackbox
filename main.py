@@ -814,8 +814,12 @@ def dashboard_student(request: Request, db: Session = Depends(get_db)):
     notifications = db.query(Notification).filter(Notification.recipient == user.username).order_by(Notification.created_at.desc()).limit(10).all()
     unread_count = db.query(Notification).filter(Notification.recipient == user.username, Notification.is_read == False).count()
     
-    # Fetch recent lost items
-    lost_items = db.query(LostItem).filter(LostItem.reporter != user.username, LostItem.is_archived == False).order_by(LostItem.created_at.desc()).limit(10).all()
+    # Fetch recent lost items (only verified/approved items visible to the public)
+    lost_items = db.query(LostItem).filter(
+        LostItem.reporter != user.username, 
+        LostItem.is_archived == False,
+        LostItem.status.in_(["Approved", "Verified", "Active", "IN CUSTODY", "Potential Match Found"])
+    ).order_by(LostItem.created_at.desc()).limit(10).all()
 
     return templates.TemplateResponse("dashboard_student.html", {
         "request": request,
