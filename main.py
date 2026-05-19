@@ -1654,14 +1654,24 @@ async def verify_qr(request: Request, token: str = Form(None), qr_data: str = Fo
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    # Parse QR data (format: "CLAIM ITEM {item_id} BY {username}")
-    if not qr_data.startswith("CLAIM ITEM"):
+    # Parse QR data (supports both "CLAIM ITEM {item_id} BY {username}" and "TBX|{item_id}|{username}")
+    item_id = None
+    if qr_data.startswith("CLAIM ITEM"):
+        try:
+            parts = qr_data.split()
+            item_id = int(parts[2])
+        except Exception:
+            return JSONResponse({"success": False, "message": "Invalid QR code format"})
+    elif qr_data.lower().startswith("tbx|"):
+        try:
+            parts = qr_data.split("|")
+            item_id = int(parts[1])
+        except Exception:
+            return JSONResponse({"success": False, "message": "Invalid QR code format"})
+    else:
         return JSONResponse({"success": False, "message": "Invalid QR code format"})
 
     try:
-        # Extract item ID
-        parts = qr_data.split()
-        item_id = int(parts[2])
 
         # Try to find in LostItem first
         item = db.query(LostItem).filter(LostItem.id == item_id).first()
