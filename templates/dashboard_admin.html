@@ -135,6 +135,18 @@
             .menu-toggle { display: block; position: fixed; top: 20px; left: 20px; z-index: 1100; background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 12px; cursor: pointer; }
             .charts-container { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: 1fr; }
+
+            /* Center notification dropdown on mobile screens to prevent cutting off */
+            .notif-dropdown {
+                position: fixed;
+                top: 75px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                width: calc(100% - 40px);
+                max-width: 320px;
+                z-index: 2100;
+            }
         }
     </style>
 </head>

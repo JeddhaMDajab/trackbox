@@ -489,6 +489,18 @@
             .welcome-banner h1 { font-size: 1.8rem; }
             .grid-stats { grid-template-columns: 1fr; }
             .items-table { display: block; overflow-x: auto; white-space: nowrap; }
+            
+            /* Center notification dropdown on mobile screens to prevent cutting off */
+            .notif-dropdown {
+                position: fixed;
+                top: 75px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                width: calc(100% - 40px);
+                max-width: 340px;
+                z-index: 2100;
+            }
         }
     </style>
 </head>
