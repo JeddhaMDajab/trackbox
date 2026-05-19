@@ -921,8 +921,8 @@ def user_account(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse("/login")
 
     # Fetch user posts (lost + found items reported by user) — newest first
-    user_lost = db.query(LostItem).filter(LostItem.reporter == user.username).order_by(LostItem.created_at.desc()).all()
-    user_found = db.query(FoundItem).filter(FoundItem.reporter == user.username).order_by(FoundItem.created_at.desc()).all()
+    user_lost = db.query(LostItem).filter(LostItem.reporter == user.username, LostItem.is_archived == False).order_by(LostItem.created_at.desc()).all()
+    user_found = db.query(FoundItem).filter(FoundItem.reporter == user.username, FoundItem.is_archived == False).order_by(FoundItem.created_at.desc()).all()
 
     # Combine posts
     posts = []
