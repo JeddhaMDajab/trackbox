@@ -1956,36 +1956,36 @@ async def quick_drop(
             # Update status of student's lost report to let them know it's in guard's custody
             lost_item.status = "IN CUSTODY"
                 
-                # Add system notification for the student
-                db.add(Notification(
-                    recipient=lost_item.reporter,
-                    message=f"Great news! A matching item for your lost report '{lost_item.item_name}' was turned in and is now IN CUSTODY at the '{building}' Guard Station. You can claim it by showing your Claim QR code to the guard!"
-                ))
-                
-                # Send WebSocket notification (Toast Alert)
+            # Add system notification for the student
+            db.add(Notification(
+                recipient=lost_item.reporter,
+                message=f"Great news! A matching item for your lost report '{lost_item.item_name}' was turned in and is now IN CUSTODY at the '{building}' Guard Station. You can claim it by showing your Claim QR code to the guard!"
+            ))
+            
+            # Send WebSocket notification (Toast Alert)
+            try:
+                await manager.send_personal_message({
+                    "type": "notification",
+                    "message": f"Great news! Your lost '{lost_item.item_name}' is now IN CUSTODY at the '{building}' Guard Station! 🛡️"
+                }, lost_item.reporter)
+            except:
+                pass
+
+            # Email Notification
+            student_user = db.query(User).filter(User.username.ilike(lost_item.reporter)).first()
+            if not student_user:
+                # Fallback: search by email prefix
+                student_user = db.query(User).filter(User.email.ilike(f"{lost_item.reporter}@%")).first()
+            
+            if student_user and student_user.email:
                 try:
-                    await manager.send_personal_message({
-                        "type": "notification",
-                        "message": f"Great news! Your lost '{lost_item.item_name}' is now IN CUSTODY at the '{building}' Guard Station! 🛡️"
-                    }, lost_item.reporter)
+                    send_email_notification(
+                        recipient_email=student_user.email,
+                        subject="Your Lost Item is in Custody!",
+                        message_content=f"Hello {student_user.first_name},\n\nGood news! A matching item for your reported lost item '{lost_item.item_name}' has been recorded and is now in custody at the '{building}' Guard Station.\n\nPlease visit the guard house to claim it using your Claim QR code.\n\nBest regards,\nTrackBox Team"
+                    )
                 except:
                     pass
-
-                # Email Notification
-                student_user = db.query(User).filter(User.username.ilike(lost_item.reporter)).first()
-                if not student_user:
-                    # Fallback: search by email prefix
-                    student_user = db.query(User).filter(User.email.ilike(f"{lost_item.reporter}@%")).first()
-                
-                if student_user and student_user.email:
-                    try:
-                        send_email_notification(
-                            recipient_email=student_user.email,
-                            subject="Your Lost Item is in Custody!",
-                            message_content=f"Hello {student_user.first_name},\n\nGood news! A matching item for your reported lost item '{lost_item.item_name}' has been recorded and is now in custody at the '{building}' Guard Station.\n\nPlease visit the guard house to claim it using your Claim QR code.\n\nBest regards,\nTrackBox Team"
-                        )
-                    except:
-                        pass
         db.commit()
 
         return JSONResponse({"success": True, "message": f"Item '{item_name}' successfully recorded as IN CUSTODY."})
