@@ -924,27 +924,32 @@ def user_account(request: Request, db: Session = Depends(get_db)):
     if not user:
         return RedirectResponse("/login")
 
-    # Fetch user posts (lost + found items reported by user) — newest first
-    user_lost = db.query(LostItem).filter(LostItem.reporter == user.username, LostItem.is_archived == False).order_by(LostItem.created_at.desc()).all()
-    user_found = db.query(FoundItem).filter(FoundItem.reporter == user.username, FoundItem.is_archived == False).order_by(FoundItem.created_at.desc()).all()
+    # Fetch user posts (lost + found items reported by user) — including archived so we can show returned items
+    user_lost = db.query(LostItem).filter(LostItem.reporter == user.username).order_by(LostItem.created_at.desc()).all()
+    user_found = db.query(FoundItem).filter(FoundItem.reporter == user.username).order_by(FoundItem.created_at.desc()).all()
 
-    # Combine posts
     posts = []
+    completed_posts = []
+
+    # Process Lost Items
     for item in user_lost:
+        if item.status == "Rejected":
+            continue
+
+        is_returned = any(s in (item.status or "").upper() for s in ["RETURNED", "CLAIMED", "COMPLETED", "SUCCESSFUL"]) or item.is_archived
+        
         matched_user = None
-        match = None  # initialize so it's always defined
+        match = None
         chat_id = item.id
         if item.matched_with:
-            # Canonical Chat ID is always the smaller of the two matched IDs
             chat_id = min(item.id, item.matched_with)
-            # Find the match
             match = db.query(LostItem).filter(LostItem.id == item.matched_with).first()
             if match:
                 matched_user = match.reporter
 
-        posts.append({
+        post_data = {
             "id": item.id,
-            "chat_id": chat_id, # Consistent ID for both parties
+            "chat_id": chat_id,
             "title": item.item_name,
             "type": item.type or "Lost",
             "description": item.description,
@@ -959,36 +964,56 @@ def user_account(request: Request, db: Session = Depends(get_db)):
             } if match else None,
             "is_owner_verified": item.is_owner_verified,
             "verified_at": item.verified_at.strftime('%Y-%m-%d %H:%M:%S') if item.verified_at else None,
-            "is_claimed": any(s in (item.status or "").upper() for s in ["RETURNED", "CLAIMED", "COMPLETED", "SUCCESSFUL"]),
+            "is_claimed": is_returned,
             "handed_over_by": item.handed_over_by,
             "handover_method": item.handover_method,
             "claimed_at": item.claimed_at.strftime('%Y-%m-%d %H:%M:%S') if item.claimed_at else None,
             "created_at": item.created_at.strftime('%Y-%m-%d %H:%M:%S') if item.created_at else None
-        })
+        }
+
         # Normalize status
-        if posts[-1]["status"] == "Completed":
-            posts[-1]["status"] = "RETURNED (PEER TO PEER)"
+        if post_data["status"] == "Completed" or is_returned:
+            post_data["status"] = "RETURNED (PEER TO PEER)"
+
+        if is_returned:
+            completed_posts.append(post_data)
+        else:
+            posts.append(post_data)
+
+    # Process Found Items
     for item in user_found:
-        posts.append({
+        if item.status == "Rejected":
+            continue
+
+        is_returned = item.is_claimed or any(s in (item.status or "").upper() for s in ["RETURNED", "CLAIMED", "COMPLETED", "SUCCESSFUL"]) or item.is_archived
+
+        post_data = {
             "id": item.id,
             "title": item.item_name,
             "type": "Found",
             "description": item.description,
             "status": item.status,
-            "matched_with": None, # FoundItem doesn't have matched_with in this simple matching
-            "is_claimed": item.is_claimed or any(s in (item.status or "").upper() for s in ["RETURNED", "CLAIMED", "COMPLETED", "SUCCESSFUL"]),
+            "matched_with": None,
+            "is_claimed": is_returned,
             "handed_over_by": item.handed_over_by,
             "handed_over_to": item.handed_over_to,
             "handover_method": item.handover_method,
             "claimed_at": item.claimed_at.strftime('%Y-%m-%d %H:%M:%S') if item.claimed_at else None,
             "created_at": item.created_at.strftime('%Y-%m-%d %H:%M:%S') if item.created_at else None
-        })
-        # Normalize status
-        if posts[-1]["status"] == "Completed":
-            posts[-1]["status"] = "RETURNED (PEER TO PEER)"
+        }
 
-    # Sort all combined posts: newest first
+        # Normalize status
+        if post_data["status"] == "Completed" or is_returned:
+            post_data["status"] = "RETURNED (PEER TO PEER)"
+
+        if is_returned:
+            completed_posts.append(post_data)
+        else:
+            posts.append(post_data)
+
+    # Sort both lists: newest first
     posts.sort(key=lambda x: x["created_at"] or "", reverse=True)
+    completed_posts.sort(key=lambda x: x["claimed_at"] or x["created_at"] or "", reverse=True)
 
     # Fetch notifications
     notifications = db.query(Notification).filter(Notification.recipient == user.username).order_by(Notification.created_at.desc()).limit(10).all()
@@ -999,6 +1024,7 @@ def user_account(request: Request, db: Session = Depends(get_db)):
         "user": user,
         "token": request.cookies.get("access_token"),
         "posts": posts,
+        "completed_posts": completed_posts,
         "notifications": notifications,
         "unread_count": unread_count
     })
