@@ -1616,7 +1616,44 @@ async def quick_drop(
         verify_admin_token(token)
         
         # Verify finder exists (Institutional account)
-        finder = db.query(User).filter((User.username == finder_id) | (User.email == finder_id)).first()
+        finder_id_clean = finder_id.strip()
+        
+        # 1. Exact match on username or email (case-insensitive)
+        finder = db.query(User).filter(
+            (func.lower(User.username) == finder_id_clean.lower()) | 
+            (func.lower(User.email) == finder_id_clean.lower())
+        ).first()
+        
+        # 2. Match by First Name + Last Name (case-insensitive)
+        if not finder:
+            finder = db.query(User).filter(
+                func.lower(func.concat(User.first_name, " ", User.last_name)) == finder_id_clean.lower()
+            ).first()
+            
+        # 3. Match by First Name + Middle Name + Last Name (case-insensitive)
+        if not finder:
+            finder = db.query(User).filter(
+                func.lower(func.concat(User.first_name, " ", User.middle_name, " ", User.last_name)) == finder_id_clean.lower()
+            ).first()
+            
+        # 4. Match by first_name only (if unique)
+        if not finder:
+            matches = db.query(User).filter(func.lower(User.first_name) == finder_id_clean.lower()).all()
+            if len(matches) == 1:
+                finder = matches[0]
+                
+        # 5. Match by last_name only (if unique)
+        if not finder:
+            matches = db.query(User).filter(func.lower(User.last_name) == finder_id_clean.lower()).all()
+            if len(matches) == 1:
+                finder = matches[0]
+                
+        # 6. Match by username containing search string (if unique)
+        if not finder:
+            matches = db.query(User).filter(User.username.ilike(f"%{finder_id_clean}%")).all()
+            if len(matches) == 1:
+                finder = matches[0]
+
         if not finder:
              return JSONResponse({"success": False, "message": "Finder account not found. Must be a valid EVSU user."})
 
