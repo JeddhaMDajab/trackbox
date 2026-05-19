@@ -298,11 +298,14 @@ def send_email_notification(recipient_email, subject, message_content):
         import smtplib
         from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
+        from email.utils import formatdate, make_msgid
         try:
             msg = MIMEMultipart()
             msg['From'] = MAIL_FROM
             msg['To'] = recipient_email
             msg['Subject'] = subject
+            msg['Date'] = formatdate(localtime=True)
+            msg['Message-ID'] = make_msgid()
             
             msg.attach(MIMEText(message_content, 'plain'))
             
