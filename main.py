@@ -2615,21 +2615,96 @@ def confirm_match(item_id: int = Form(...), db: Session = Depends(get_db)):
 
 # ======================= DATA BACKUP (US-06) =======================
 @app.get("/admin/backup/download")
-def download_backup(token: str):
+def download_backup(token: str, db: Session = Depends(get_db)):
     try:
         verify_admin_token(token)
-        db_file = "trackbox.db"
-        if not os.path.exists(db_file):
-            return JSONResponse({"success": False, "message": "Database file not found"})
+        
+        from sqlalchemy.inspection import inspect
+        import zipfile
+        import io
+        from datetime import datetime
+        
+        models = [Building, User, LostItem, FoundItem, Notification, Message]
+        sql_lines = []
+        sql_lines.append("-- TrackBox Database Backup (MySQL Compatible)")
+        sql_lines.append(f"-- Generated At: {get_ph_time().strftime('%Y-%m-%d %H:%M:%S')} PH Time")
+        sql_lines.append("SET FOREIGN_KEY_CHECKS = 0;\n")
+        
+        for model in models:
+            table_name = model.__tablename__
+            sql_lines.append(f"-- ------------------------------------------------------")
+            sql_lines.append(f"-- Table structure and data for table `{table_name}`")
+            sql_lines.append(f"-- ------------------------------------------------------")
+            sql_lines.append(f"DROP TABLE IF EXISTS `{table_name}`;")
+            
+            columns = inspect(model).mapper.columns
+            create_parts = []
+            for col in columns:
+                col_name = col.key
+                col_type = col.type
+                
+                # Map SQLAlchemy type to MySQL type
+                mysql_type = "VARCHAR(255)"
+                if str(col_type).startswith("INTEGER"):
+                    mysql_type = "INT"
+                elif str(col_type).startswith("BOOLEAN"):
+                    mysql_type = "TINYINT(1)"
+                elif str(col_type).startswith("DATETIME"):
+                    mysql_type = "DATETIME"
+                elif str(col_type).startswith("TEXT"):
+                    mysql_type = "TEXT"
+                
+                nullable = "NULL" if col.nullable else "NOT NULL"
+                if col.primary_key:
+                    nullable += " AUTO_INCREMENT"
+                
+                create_parts.append(f"  `{col_name}` {mysql_type} {nullable}")
+                
+            pk_cols = [c.key for c in columns if c.primary_key]
+            if pk_cols:
+                pk_str = ", ".join([f"`{c}`" for c in pk_cols])
+                create_parts.append(f"  PRIMARY KEY ({pk_str})")
+                
+            create_sql = f"CREATE TABLE `{table_name}` (\n" + ",\n".join(create_parts) + "\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n"
+            sql_lines.append(create_sql)
+            
+            # Fetch rows
+            rows = db.query(model).all()
+            if rows:
+                col_names = [col.key for col in columns]
+                col_str = ", ".join([f"`{c}`" for c in col_names])
+                
+                for row in rows:
+                    vals = []
+                    for col in col_names:
+                        val = getattr(row, col)
+                        if val is None:
+                            vals.append("NULL")
+                        elif isinstance(val, bool):
+                            vals.append("1" if val else "0")
+                        elif isinstance(val, (int, float)):
+                            vals.append(str(val))
+                        elif isinstance(val, datetime):
+                            vals.append(f"'{val.strftime('%Y-%m-%d %H:%M:%S')}'")
+                        else:
+                            escaped = str(val).replace("\\", "\\\\").replace("'", "\\'")
+                            vals.append(f"'{escaped}'")
+                    
+                    val_str = ", ".join(vals)
+                    sql_lines.append(f"INSERT INTO `{table_name}` ({col_str}) VALUES ({val_str});")
+            sql_lines.append("")
+            
+        sql_lines.append("SET FOREIGN_KEY_CHECKS = 1;")
+        sql_content = "\n".join(sql_lines)
         
         # Create ZIP archive in memory
         timestamp = get_ph_time().strftime("%Y%m%d_%H%M%S")
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(db_file, arcname=f"trackbox_{timestamp}.db")
+            zip_file.writestr(f"trackbox_{timestamp}.sql", sql_content)
         
         zip_buffer.seek(0)
-        filename = f"TrackBox_Full_Backup_{timestamp}.zip"
+        filename = f"TrackBox_MySQL_Backup_{timestamp}.zip"
         
         return StreamingResponse(
             zip_buffer,
