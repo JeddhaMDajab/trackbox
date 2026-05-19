@@ -1904,8 +1904,9 @@ async def quick_drop(
             if len(matches) == 1:
                 finder = matches[0]
 
-        if not finder:
-             return JSONResponse({"success": False, "message": "Finder account not found. Must be a valid EVSU user."})
+        finder_username = finder_id_clean
+        if finder:
+            finder_username = finder.username
 
         # Handle image
         filename = None
@@ -1918,7 +1919,7 @@ async def quick_drop(
 
         # Create Found Item with status IN CUSTODY (Philippine Time)
         new_item = FoundItem(
-            reporter=finder.username,
+            reporter=finder_username,
             category=category,
             item_name=item_name,
             description=description,
@@ -1932,11 +1933,12 @@ async def quick_drop(
         db.commit()
 
         # Notify Finder
-        db.add(Notification(
-            recipient=finder.username,
-            message=f"Thank you! Your found item '{item_name}' has been recorded and is now IN CUSTODY of the security office."
-        ))
-        db.commit()
+        if finder:
+            db.add(Notification(
+                recipient=finder.username,
+                message=f"Thank you! Your found item '{item_name}' has been recorded and is now IN CUSTODY of the security office."
+            ))
+            db.commit()
 
         # Check for matching lost items reported by students to notify them
         # 1. Matches in the same category
