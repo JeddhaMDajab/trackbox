@@ -2391,22 +2391,32 @@ def get_stats(building: Optional[str] = None, db: Session = Depends(get_db)):
     # Base queries
     lost_q = db.query(LostItem).filter(LostItem.is_archived == False)
     found_q = db.query(FoundItem).filter(FoundItem.is_claimed == False)
-    returned_q = db.query(FoundItem).filter(FoundItem.is_claimed == True)
+    
+    # Returned items query (lost items archived as returned + claimed found items)
+    lost_returned_q = db.query(LostItem).filter(LostItem.is_archived == True, LostItem.status != "Rejected")
+    found_returned_q = db.query(FoundItem).filter(FoundItem.is_claimed == True)
     
     # Optional building filter (US-03)
     if building and building != "All Campus" and building != "[object Event]":
         lost_q = lost_q.filter(LostItem.building == building)
         found_q = found_q.filter(FoundItem.building == building)
-        returned_q = returned_q.filter(FoundItem.building == building)
+        lost_returned_q = lost_returned_q.filter(LostItem.building == building)
+        found_returned_q = found_returned_q.filter(FoundItem.building == building)
 
     lost_count = lost_q.count()
     found_count = found_q.count()
-    returned_count = returned_q.count()
+    returned_count = lost_returned_q.count() + found_returned_q.count()
 
-    # Category distribution for the selected building/campus
+    # Category distribution for the selected building/campus (combining Lost and Found)
     categories = {}
-    found_items = found_q.all()
-    for item in found_items:
+    
+    # Active Lost Items categories
+    for item in lost_q.all():
+        if item.category:
+            categories[item.category] = categories.get(item.category, 0) + 1
+            
+    # Unclaimed Found Items categories
+    for item in found_q.all():
         if item.category:
             categories[item.category] = categories.get(item.category, 0) + 1
 
