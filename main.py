@@ -2696,7 +2696,8 @@ async def peer_verify(
             found_report.handover_method = "Peer-to-Peer"
             found_report.claimed_at = get_ph_time()
             # Don't archive - keep visible for admin tracking
-            found_report.description += f" [Returned to owner: {owner_username}]"
+            if "[Returned to owner:" not in (found_report.description or ""):
+                found_report.description = (found_report.description or "") + f" [Returned to owner: {owner_username}]"
         elif found_report_from_lost:
             # Item is in LostItem table with type='FOUND'
             found_report_from_lost.status = "RETURNED (PEER TO PEER)"
@@ -2705,7 +2706,8 @@ async def peer_verify(
             found_report_from_lost.handover_method = "Peer-to-Peer"
             found_report_from_lost.claimed_at = get_ph_time()
             # Don't archive FOUND items - keep visible for admin
-            found_report_from_lost.description += f" [Returned to owner: {owner_username}]"
+            if "[Returned to owner:" not in (found_report_from_lost.description or ""):
+                found_report_from_lost.description = (found_report_from_lost.description or "") + f" [Returned to owner: {owner_username}]"
         
         if lost_report and lost_report.type == "LOST":
             # Only archive actual LOST reports
