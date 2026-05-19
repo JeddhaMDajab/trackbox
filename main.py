@@ -2351,7 +2351,13 @@ def get_messages(item_id: int, request: Request, db: Session = Depends(get_db)):
         (Message.sender == user.username) | (Message.receiver == user.username)
     ).order_by(Message.created_at.asc()).all()
     
-    return messages
+    return [{
+        "id": m.id, 
+        "sender": m.sender, 
+        "receiver": m.receiver, 
+        "content": m.content, 
+        "created_at": m.created_at.isoformat() if m.created_at else None
+    } for m in messages]
 
 # ======================= ADMIN ANALYTICS =======================
 @app.get("/admin/stats")
