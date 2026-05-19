@@ -1292,49 +1292,18 @@ def delete_item(item_id: int, token: str, table: Optional[str] = None, db: Sessi
     item.status = "Rejected"
     db.commit()
 
-    # Send rejection email notification to the reporter
+    # Create in-app Rejection Notification for the student dashboard
     try:
-        recipient_email = None
         if item.reporter:
-            if "@" in item.reporter:
-                recipient_email = item.reporter
-            else:
-                # Case-insensitive query
-                user = db.query(User).filter(User.username.ilike(item.reporter)).first()
-                if user:
-                    recipient_email = user.email
-                else:
-                    # Fallback: search by email prefix (starts with username)
-                    user = db.query(User).filter(User.email.ilike(f"{item.reporter}@%")).first()
-                    if user:
-                        recipient_email = user.email
-            
-            if recipient_email:
-                subject = f"TrackBox EVSU - Item Report Rejected"
-                message_content = f"""Hello {item.reporter},
-
-We would like to inform you that your report for the item '{item.item_name}' has been reviewed by the TrackBox Administration.
-
-Status: REJECTED
-Reason: The report did not meet our verification guidelines or has been marked as invalid.
-
-If you believe this was an error, please contact the security office or system administrator.
-
-Thank you,
-TrackBox Administration
-Eastern Visayas State University"""
-                send_email_notification(recipient_email, subject, message_content)
-            else:
-                # Log diagnostic warning so we know exactly why no email was sent
-                warning_notif = Notification(
-                    recipient=item.reporter,
-                    message=f"⚠️ SMTP EMAIL WARNING: Could not find email address for reporter '{item.reporter}' in our records. No rejection email was sent.",
-                    created_at=get_ph_time()
-                )
-                db.add(warning_notif)
-                db.commit()
-    except Exception as email_err:
-        print(f"Failed to send rejection email: {email_err}")
+            notif = Notification(
+                recipient=item.reporter,
+                message=f"❌ Your report for the item '{item.item_name}' has been reviewed by the Admin and was REJECTED.",
+                created_at=get_ph_time()
+            )
+            db.add(notif)
+            db.commit()
+    except Exception as notif_err:
+        print(f"Failed to create rejection notification: {notif_err}")
 
     return {"success": True, "message": "Item archived successfully and reporter notified"}
     
